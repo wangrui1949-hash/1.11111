@@ -49,7 +49,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 10;
+            z-: 10;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -125,7 +125,7 @@
             left: 40px;
             display: flex;
             gap: 15px;
-            z-index: 50;
+            z-: 50;
         }
 
         .control-btn {
@@ -206,7 +206,7 @@
             flex-direction: column;
             padding: 30px;
             box-sizing: border-box;
-            z-index: 40;
+            z-: 40;
             transform: translateX(100%); 
             transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
             box-shadow: -10px 0 30px rgba(0,0,0,0.1);
@@ -495,10 +495,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 tooltip: "準備好穿越時空了嗎!",
                 langBtn: "简",
                 chats: [
-                    { type: 'received', text: "🌸 春天", desc: "作品集展示📖", link: "index.html#spring" },
-                    { type: 'received', text: "☀️ 夏天", desc: "工作經歷📚", link: "index.html#summer" },
-                    { type: 'received', text: "🍂 秋天", desc: "個人主頁👋", link: "index.html#autumn" },
-                    { type: 'received', text: "❄️ 冬天", desc: "獲獎&技能🏆", link: "index.html#winter" },
+                    { type: 'received', text: "🌸 春天", desc: "作品集展示📖", link: "index3.html#spring" },
+                    { type: 'received', text: "☀️ 夏天", desc: "工作經歷📚", link: "index3.html#summer" },
+                    { type: 'received', text: "🍂 秋天", desc: "個人主頁👋", link: "index3.html#autumn" },
+                    { type: 'received', text: "❄️ 冬天", desc: "獲獎&技能🏆", link: "index3.html#winter" },
                         { type: 'received', text: "🎭 小劇場", desc: "意見反饋📮", link: "index2.html" }
                 ]
             },
@@ -516,10 +516,10 @@ document.addEventListener("DOMContentLoaded", () => {
         tooltip: "准备好穿越时空了么！",
         langBtn: "EN",
     chats: [
-    { type: 'received', text: "🌸 春天", desc: "作品集展示📖", link: "index.html#spring" },
-    { type: 'received', text: "☀️ 夏天", desc: "工作经历📚", link: "index.html#summer" },
-    { type: 'received', text: "🍂 秋天", desc: "个人主页👋", link: "index.html#autumn" },
-    { type: 'received', text: "❄️ 冬天", desc: "获奖&技能🏆", link: "index.html#winter" },
+    { type: 'received', text: "🌸 春天", desc: "作品集展示📖", link: "index3.html#spring" },
+    { type: 'received', text: "☀️ 夏天", desc: "工作经历📚", link: "index3.html#summer" },
+    { type: 'received', text: "🍂 秋天", desc: "个人主页👋", link: "index3.html#autumn" },
+    { type: 'received', text: "❄️ 冬天", desc: "获奖&技能🏆", link: "index3.html#winter" },
         { type: 'received', text: "🎭 小剧场", desc: "意见反馈📮", link: "index2.html" }
 ]
     },
@@ -536,10 +536,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 tooltip: "Click to start the journey",
                 langBtn: "繁",
 chats: [
-    { type: 'received', text: "🌸 Spring", desc: "Portfolio Showcase📖", link: "index.html#spring" },
-    { type: 'received', text: "☀️ Summer", desc: "Work Experience📚", link: "index.html#summer" },
-    { type: 'received', text: "🍂 Autumn", desc: "About Me👋", link: "index.html#autumn" },
-    { type: 'received', text: "❄️ Winter", desc: "Awards & Skills🏆", link: "index.html#winter" },
+    { type: 'received', text: "🌸 Spring", desc: "Portfolio Showcase📖", link: "index3.html#spring" },
+    { type: 'received', text: "☀️ Summer", desc: "Work Experience📚", link: "index3.html#summer" },
+    { type: 'received', text: "🍂 Autumn", desc: "About Me👋", link: "index3.html#autumn" },
+    { type: 'received', text: "❄️ Winter", desc: "Awards & Skills🏆", link: "index3.html#winter" },
         { type: 'received', text: "🎭 Theater", desc: "Feedback📮", link: "index2.html" }
 ]
             }
@@ -657,7 +657,7 @@ function answerCall() {
 
     // 加在这里 👇
     setTimeout(() => {
-    window.location.href = "index.html" + window.location.search;
+    window.location.href = "index3.html" + window.location.search;
 }, 800); // 800毫秒后跳转，让动画先播放完，更自然
 }
 
