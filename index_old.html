@@ -1140,12 +1140,46 @@ body.scrolled #topbar {
 
     <!-- 層 2: 季節背景圖 (JS 動態切換) -->
 <div id="bg-season-layer">
-<video class="season-video" id="video-autumn" muted loop playsinline><source src="./videos/autumn.mov""></video>
-  <video class="season-video" id="video-winter" muted loop playsinline><source src="./videos/winter.mov""></video>
-  <video class="season-video" id="video-spring" muted loop playsinline><source src="./videos/spring.mov""></video>
-  <video class="season-video" id="video-summer" muted loop playsinline><source src="./videos/summer.mov""></video>
-</div>
+  <!-- 秋天 -->
+  <iframe 
+    class="season-video" 
+    id="video-autumn" 
+    src="https://drive.google.com/file/d/1sbOloOFveBnENsUWbRtKs2fxCl8eMGzv/preview?autoplay=1&mute=1&loop=1" 
+    frameborder="0" 
+    allow="autoplay; muted; loop; fullscreen"
+    allowfullscreen>
+  </iframe>
 
+  <!-- 冬天 -->
+  <iframe 
+    class="season-video" 
+    id="video-winter" 
+    src="https://drive.google.com/file/d/1GcucUQDMzMGRIJl1YTqISbX0oFyHPtC_/preview?autoplay=1&mute=1&loop=1" 
+    frameborder="0" 
+    allow="autoplay; muted; loop; fullscreen"
+    allowfullscreen>
+  </iframe>
+
+  <!-- 春天 -->
+  <iframe 
+    class="season-video" 
+    id="video-spring" 
+    src="https://drive.google.com/file/d/1_f94Pz-UcyafzC-lJtrbQ8kcjJ45m77l/preview?autoplay=1&mute=1&loop=1" 
+    frameborder="0" 
+    allow="autoplay; muted; loop; fullscreen"
+    allowfullscreen>
+  </iframe>
+
+  <!-- 夏天 -->
+  <iframe 
+    class="season-video" 
+    id="video-summer" 
+    src="https://drive.google.com/file/d/1flFnYzaACidANaw_zN2Y5tH9pt2ctS6p/preview?autoplay=1&mute=1&loop=1" 
+    frameborder="0" 
+    allow="autoplay; muted; loop; fullscreen"
+    allowfullscreen>
+  </iframe>
+</div>
     <!-- ==================== 開場歡迎頁 ==================== -->
     <div id="welcome">
       <div class="welcome-text" onclick="enterWebsite()">
