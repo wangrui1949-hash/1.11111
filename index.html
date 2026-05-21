@@ -1,959 +1,2014 @@
 <!DOCTYPE html>
-<html>
-<head>
-                <style></style>
-            <script src="chrome-extension://amcccnldajjnngnaoinemnaloklogjak/assets/main-world.ts-B0-0X4eu.js" type="module"></script></head>
-            <body>
-                
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reina's World</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=Noto+Serif+TC:wght@400;700;900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+/* 影片基礎樣式 */
+.season-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  pointer-events: none;
+  /* 關鍵：疊化時間設為 1.2 秒，讓切換像呼吸一樣自然 */
+  transition: opacity 1.2s ease-in-out;
+}
 
+.season-video.active {
+  opacity: 1;
+  z-index: 2; /* 激活時浮到最上層 */
+}
+      /* ==================== 全局變數 ==================== */
+      :root {
+        --autumn-bg: #ffffff;
+        --autumn-gold: #c48209;
+        --autumn-orange: #ff7a1f;
+        --winter-bg: #0a1a35;
+        --winter-blue: #c8e4ff;
+        --winter-white: #f0f8ff;
+        --spring-bg: #102a0d;
+        --spring-green: #8fe08e;
+        --spring-pink: #ffb6d4;
+        --summer-bg: #081e35;
+        --summer-azure: #52c2ff;
+        --summer-orange: #ff914d;
+      }
 
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reina's Seasonal World</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&amp;family=DM+Sans:wght@300;400;500;600&amp;family=Noto+Serif+TC:wght@400;700;900&amp;display=swap" rel="stylesheet">
-<style>
-  /* ==================== 全局變數 ==================== */
-  :root {
-    --autumn-bg: #2d1506; --autumn-gold: #ffbc3d; --autumn-orange: #ff7a1f;
-    --winter-bg: #0a1a35; --winter-blue: #c8e4ff; --winter-white: #f0f8ff;
-    --spring-bg: #102a0d; --spring-green: #8fe08e; --spring-pink: #ffb6d4;
-    --summer-bg: #081e35; --summer-azure: #52c2ff; --summer-orange: #ff914d;
-  }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+      html {
+  scroll-behavior: smooth; 
+  scroll-padding-top: 80px; 
+  scroll-snap-type: y mandatory; 
+  overflow-y: scroll; 
+  height: 100%;
+  background: transparent !important; /* 作用：【关键修复】底层彻底透明，绝不漏白 */
+}
 
-  html {
-    scroll-snap-type: y mandatory;
-    overflow-y: scroll;
-    height: 100%;
-    background: #000;
-  }
+      body {
+  font-family: "DM Sans", sans-serif;
+  font-size: 1.00rem; /* ✅ 新增：全局基础字号加大（默认是 1rem）*/
+  cursor: none;
+  overflow-x: hidden;
+  color: #fff;
+}
 
-  body { 
-    font-family: 'DM Sans', sans-serif; 
-    cursor: none; 
-    overflow-x: hidden; 
-    color: #fff;
-  }
+      /* ==================== 1. 動態背景系統 ==================== */
 
-  /* ==================== 1. 動態背景系統 ==================== */
-  
-  /* 層 1: 開場背景 (Welcome 頁面) */
-  #bg-welcome-layer {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    z-index: -2;
-    overflow: hidden;
-    transition: opacity 1s ease;
-    /* 開場背景圖：星空/宇宙 */
-    background-image: url('https://i.pinimg.com/736x/c6/ea/64/c6ea64fb139b96700789c4c78dc30a6d.jpg');
-    background-size: cover;
-    background-position: center;
-  }
+#bg-welcome-layer {
+  position: fixed; /* 作用：【关键修复】从 absolute 改为 fixed，让欢迎页视频钉在屏幕上，滚动时不会被推走 */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -2; /* 作用：放在最底层 */
+  overflow: hidden;
+  transition: opacity 1s ease;
+}
 
-  #bg-video-overlay {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.3); /* 稍微壓暗讓文字更清晰 */
-    pointer-events: none;
-  }
+      #bg-video-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.3); /* 稍微壓暗讓文字更清晰 */
+        pointer-events: none;
+      }
 
-  /* 層 2: 季節滾動背景 (滾動後顯現) */
-  #bg-season-layer {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    z-index: -1;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    opacity: 0; /* 初始隱藏 */
-    transform: scale(1.1);
-    transition: opacity 1.5s ease, transform 0.1s linear, background-image 0.5s ease;
-    filter: brightness(0.75); /* 稍微壓暗以突出前景文字 */
-  }
+/* 季節背景層：強制顯示，防止滾動變透明 */
+#bg-season-layer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1; /* 放在最底層 */
+  opacity: 1 !important; /* 強制不透明 */
+  filter: brightness(0.75);
+  background: #0a0a0a; /* 影片載入失敗時的防灰底色 */
+}
+      /* ==================== 自定義滑鼠 ==================== */
+      #cursor-follower {
+        position: fixed;
+        width: 36px;
+        height: 36px;
+        pointer-events: none;
+        z-index: 9999;
+        transform: translate(-50%, -50%);
+        transition: transform 0.08s linear;
+        font-size: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+        transition: opacity 0.3s;
+      }
 
-  /* ==================== 開場歡迎頁 ==================== */
-  #welcome {
-    position: fixed; top:0; left:0; width:100vw; height:100vh;
-    background: transparent;
-    display: flex; align-items: center; justify-content: center;
-    z-index: 99999; transition: opacity 1.2s ease, visibility 1.2s;
-  }
-  #welcome.hidden { opacity:0; visibility:hidden; pointer-events: none; }
-  
-  .welcome-text {
-    font-family: 'Playfair Display', serif; font-size:3.2rem; color:#fff;
-    text-shadow: 0 0 40px rgba(255,188,61,0.8), 0 2px 10px rgba(0,0,0,0.5);
-    cursor: pointer; transition: transform 0.3s;
-    position:relative; z-index:1;
-    white-space: nowrap; overflow:hidden; border-right:3px solid #ffbc3d;
-    width:0; animation: typing 2.5s steps(25) forwards, blink 0.8s infinite;
-    text-align: center;
-    background: rgba(0,0,0,0.3);
-    padding: 10px 30px; border-radius: 50px; backdrop-filter: blur(5px);
-  }
-  @keyframes typing { to { width:100%; } }
-  @keyframes blink { 50% { border-color:transparent; } }
-  .welcome-text:hover { transform: scale(1.08); }
+      /* ==================== 頂部導航欄 ==================== */
+      #topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 40px;
+  background: rgba(0, 0, 0, 0.1); /* ✅ 改淡一点，或者 transparent */
+  backdrop-filter: blur(10px); /* 保留毛玻璃效果 */
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  transition: background 0.3s;
+}
 
-  /* ==================== 自定義滑鼠 ==================== */
-  #cursor-follower {
-    position: fixed; width: 36px; height: 36px; pointer-events: none;
-    z-index: 9999; transform: translate(-50%, -50%);
-    transition: transform 0.08s linear; font-size: 24px;
-    display: flex; align-items: center; justify-content: center;
-    filter: drop-shadow(0 0 8px rgba(255,255,255,0.8));
-    transition: opacity 0.3s;
-  }
+/* 滚动后的状态 */
+body.scrolled #topbar {
+  background: rgba(0, 0, 0, 0.2); /* ✅ 改淡一点，不要 0.8 那么黑 */
+}
+      #topbar .logo {
+        font-family: "Playfair Display", serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.95);
+        letter-spacing: 0.05em;
+      }
+      #topbar .controls {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
 
-  /* ==================== 頂部導航欄 ==================== */
-  #topbar {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 18px 40px;
-    background: rgba(0,0,0,0.2);
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border-bottom: 1px solid rgba(255,255,255,0.12);
-    transition: background 0.3s;
-  }
-  body.scrolled #topbar { background: rgba(0,0,0,0.8); }
+      .dropdown-wrap {
+        position: relative;
+      }
+      .dropdown-btn {
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        color: rgba(255, 255, 255, 0.95);
+        padding: 8px 18px;
+        border-radius: 50px;
+        font-family: "DM Sans", sans-serif;
+        font-size: 0.82rem;
+        cursor: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.3s, border 0.3s;
+      }
+      .dropdown-btn:hover {
+        background: rgba(255, 255, 255, 0.25);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+      .dropdown-menu {
+        position: absolute;
+        top: calc(100% + 10px);
+        left: 0;
+        background: rgba(10, 10, 20, 0.96);
+        backdrop-filter: blur(24px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 14px;
+        overflow: hidden;
+        min-width: 180px;
+        display: none;
+        flex-direction: column;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+      }
+      .dropdown-menu.open {
+        display: flex;
+      }
+      .dropdown-menu a {
+        color: rgba(255, 255, 255, 0.9);
+        text-decoration: none;
+        padding: 12px 20px;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: background 0.2s, color 0.2s;
+        cursor: none;
+      }
+      .dropdown-menu a:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+      }
 
-  #topbar .logo { font-family: 'Playfair Display', serif; font-size: 1.1rem; font-weight: 700; color: rgba(255,255,255,0.95); letter-spacing: 0.05em; }
-  #topbar .controls { display: flex; align-items: center; gap: 16px; }
+      .lang-toggle {
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        color: rgba(255, 255, 255, 0.95);
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-family: "DM Sans", sans-serif;
+        font-size: 0.82rem;
+        cursor: none;
+        transition: background 0.3s;
+      }
+      .lang-toggle:hover {
+        background: rgba(255, 255, 255, 0.25);
+      }
 
-  .dropdown-wrap { position: relative; }
-  .dropdown-btn {
-    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
-    color: rgba(255,255,255,0.95); padding: 8px 18px; border-radius: 50px;
-    font-family: 'DM Sans', sans-serif; font-size: 0.82rem; cursor: none;
-    display: flex; align-items: center; gap: 8px; transition: background 0.3s, border 0.3s;
-  }
-  .dropdown-btn:hover { background: rgba(255,255,255,0.25); border-color: rgba(255,255,255,0.5); }
-  .dropdown-menu {
-    position: absolute; top: calc(100% + 10px); left: 0;
-    background: rgba(10,10,20,0.96); backdrop-filter: blur(24px);
-    border: 1px solid rgba(255,255,255,0.15); border-radius: 14px;
-    overflow: hidden; min-width: 180px; display: none; flex-direction: column;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.7);
-  }
-  .dropdown-menu.open { display: flex; }
-  .dropdown-menu a {
-    color: rgba(255,255,255,0.9); text-decoration: none; padding: 12px 20px;
-    font-size: 0.85rem; display: flex; align-items: center; gap: 10px;
-    transition: background 0.2s, color 0.2s; cursor: none;
-  }
-  .dropdown-menu a:hover { background: rgba(255,255,255,0.15); color: #fff; }
+      /* ==================== 頁面區塊樣式 ==================== */
+      section {
+        height: 100vh;
+        scroll-snap-align: start;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+      }
 
-  .lang-toggle {
-    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
-    color: rgba(255,255,255,0.95); padding: 8px 20px; border-radius: 50px;
-    font-family: 'DM Sans', sans-serif; font-size: 0.82rem; cursor: none;
-    transition: background 0.3s;
-  }
-  .lang-toggle:hover { background: rgba(255,255,255,0.25); }
+      canvas.bg-canvas {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        z-index: 1;
+        mix-blend-mode: normal;
+      }
 
-  /* ==================== 頁面區塊樣式 ==================== */
-  section {
-    height: 100vh; scroll-snap-align: start; position: relative;
-    overflow: hidden; display: flex; align-items: center; justify-content: center;
-    background: transparent;
-  }
+      .section-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  /* max-width: 1200px; 删掉这一行 */
+  max-width: 1400px; /* 或者改成 1400px，让内容更宽 */
+  padding: 100px 40px 40px;
+}
 
-  canvas.bg-canvas {
-    position: absolute; inset: 0; pointer-events: none; z-index: 1;
-    mix-blend-mode: normal; 
-  }
+      .glass {
+  /* 提高背景不透明度：0.25→0.65, 0.15→0.45 */
+  background: linear-gradient(135deg, rgba(210, 188, 255, 0.65), rgba(255, 204, 204, 0.45)); 
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.4); /* 边框也加深 */
+  border-radius: 24px;
+  /* 添加内阴影，让文字更突出 */
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
+}
 
-  .section-content {
-    position: relative; z-index: 2; width: 100%; max-width: 1200px;
-    padding: 100px 40px 40px;
-  }
+/* 确保玻璃卡片内的文字颜色够深 */
+.glass h4,
+.glass .project-title,
+.glass .tl-job {
+  color: #404040 !important; /* 深黑色，确保清晰 */
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5); /* 白色描边效果 */
+}
 
-  .glass {
-    background: rgba(255,255,255,0.08); backdrop-filter: blur(22px);
-    -webkit-backdrop-filter: blur(22px);
-    border: 1px solid rgba(255,255,255,0.18); border-radius: 24px;
-  }
+.glass p,
+.glass .project-desc,
+.glass .tl-desc {
+  color: #000000 !important; /* 深灰色 */
+}
 
-  .ripple-container { position: relative; overflow: hidden; }
-  .ripple {
-    position: absolute; border-radius: 50%; transform: scale(0);
-    animation: rippleAnim 0.6s linear; background: rgba(255,255,255,0.3);
-    pointer-events: none;
-  }
-  @keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }
+      .ripple-container {
+        position: relative;
+        overflow: hidden;
+      }
+      .ripple {
+        position: absolute;
+        border-radius: 50%;
+        transform: scale(0);
+        animation: rippleAnim 0.6s linear;
+        background: rgba(255, 255, 255, 0.3);
+        pointer-events: none;
+      }
+      @keyframes rippleAnim {
+        to {
+          transform: scale(4);
+          opacity: 0;
+        }
+      }
 
-  /* ==================== 秋天頁面 ==================== */
-  #autumn .section-content { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
-  .autumn-left { display: flex; flex-direction: column; align-items: center; gap: 24px; }
-  .avatar-wrap { position: relative; width: 180px; height: 180px; }
-  .avatar-ring {
-    position: absolute; inset: -6px; border-radius: 50%;
-    background: conic-gradient(from 0deg, #ffbc3d, #ff7a1f, #8b4c39, #ffbc3d);
-    animation: spinRing 8s linear infinite;
-  }
-  @keyframes spinRing { to { transform: rotate(360deg); } }
-  .avatar-img {
-    position: relative; width: 180px; height: 180px; border-radius: 50%;
-    background: linear-gradient(135deg, #ff7a1f, #ffbc3d);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 70px; z-index: 1; transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
-    box-shadow: 0 0 50px rgba(255,188,61,0.6);
-  }
-  .avatar-img:hover { transform: scale(1.07); }
-  .autumn-name {
-    font-family: 'Playfair Display', serif; font-size: 2.6rem; font-weight: 900;
-    color: #fff0d2; text-align: center; line-height: 1.1;
-    text-shadow: 0 0 50px rgba(255,188,61,0.7);
-  }
-  .autumn-title {
-    font-size: 0.95rem; color: #ffbc3d; letter-spacing: 0.2em;
-    text-transform: uppercase; text-align: center;
-  }
-  .autumn-right { display: flex; flex-direction: column; gap: 24px; }
-  .bio-card { padding: 28px; }
-  .bio-text { color: rgba(255,240,210,0.9); line-height: 1.8; font-size: 0.95rem; }
-  .contact-row { display: flex; align-items: center; gap: 10px; margin-top: 16px; color: #ffbc3d; font-size: 0.88rem; }
-  .social-row { display: flex; gap: 14px; margin-top: 8px; }
-  .social-icon {
-    width: 44px; height: 44px; border-radius: 12px;
-    background: rgba(255,188,61,0.2); border: 1px solid rgba(255,188,61,0.4);
-    display: flex; align-items: center; justify-content: center;
-    color: #ffbc3d; font-size: 1.2rem; cursor: none;
-    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); text-decoration: none;
-  }
-  .social-icon:hover {
-    transform: scale(1.25) translateY(-4px);
-    background: rgba(255,188,61,0.4); box-shadow: 0 8px 25px rgba(255,188,61,0.6);
-  }
+      /* ==================== 秋天頁面 ==================== */
+     #autumn .section-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 60px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 100px 40px 40px;
+}
 
-  /* ==================== 冬天頁面 ==================== */
-  #winter .section-content { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; padding-top: 120px; }
-  .winter-heading {
-    font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 700;
-    color: #f0f8ff; margin-bottom: 24px; display: flex; align-items: center; gap: 12px;
-  }
-  .award-list { display: flex; flex-direction: column; gap: 14px; }
-  .award-item {
-    padding: 18px 22px; display: flex; align-items: flex-start; gap: 16px;
-    transition: transform 0.3s, box-shadow 0.3s; cursor: default;
-  }
-  .award-item:hover { transform: translateX(6px); box-shadow: 0 8px 30px rgba(200,228,255,0.25); }
-  .trophy-icon { font-size: 1.6rem; flex-shrink: 0; margin-top: 2px; }
-  .award-info h4 { color: #f0f8ff; font-size: 0.95rem; font-weight: 600; }
-  .award-info p { color: #9cb8d4; font-size: 0.82rem; margin-top: 3px; }
-  .award-year {
-    font-size: 0.75rem; color: #c8e4ff; background: rgba(200,228,255,0.15);
-    padding: 3px 10px; border-radius: 20px; margin-top: 6px; display: inline-block;
-  }
-  .skills-grid { display: flex; flex-wrap: wrap; gap: 10px; }
-  .skill-badge {
-    padding: 10px 18px; border-radius: 50px; font-size: 0.82rem; font-weight: 500;
-    color: #f0f8ff; background: rgba(200,228,255,0.15); border: 1px solid rgba(200,228,255,0.3);
-    cursor: none; transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); position: relative;
-  }
-  .skill-badge:hover {
-    transform: scale(1.15) translateY(-3px); background: rgba(200,228,255,0.35);
-    border-color: rgba(200,228,255,0.7);
-    box-shadow: 0 0 25px rgba(200,228,255,0.5), 0 0 50px rgba(200,228,255,0.3); color: #fff;
-  }
-  #snowman {
-    position: absolute; bottom: 40px; right: 60px; font-size: 80px; z-index: 3;
-    filter: drop-shadow(0 0 30px rgba(200,228,255,0.7));
-    transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); will-change: transform;
-  }
+/* 左侧样式 - 头像和名字区域 */
+.autumn-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
 
-  /* ==================== 春天頁面 ==================== */
-  #spring .section-content { display: flex; flex-direction: column; gap: 28px; padding-top: 100px; height: 100%; overflow: hidden; }
-  .spring-heading {
-    font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700;
-    color: #fff; text-align: center;
-  }
-  .search-wrap { position: relative; max-width: 440px; margin: 0 auto; }
-  .search-input {
-    width: 100%; padding: 14px 22px 14px 50px; border-radius: 50px;
-    border: 1px solid rgba(143,224,142,0.4); background: rgba(143,224,142,0.12);
-    color: #fff; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none;
-    transition: border 0.3s, box-shadow 0.3s;
-  }
-  .search-input::placeholder { color: rgba(255,255,255,0.5); }
-  .search-input:focus {
-    border-color: rgba(143,224,142,0.8); box-shadow: 0 0 0 5px rgba(143,224,142,0.15);
-  }
-  .search-icon {
-    position: absolute; left: 18px; top: 50%; transform: translateY(-50%);
-    font-size: 1rem; color: #8fe08e; pointer-events: none;
-  }
-  .projects-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; flex: 1; overflow: hidden; }
-  .project-card {
-    padding: 0; overflow: hidden; cursor: none;
-    transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.4s;
-    transform-style: preserve-3d;
-  }
-  .project-card:hover {
-    transform: translateY(-8px) scale(1.03);
-    box-shadow: 0 20px 60px rgba(143,224,142,0.3), 0 0 0 1px rgba(143,224,142,0.4);
-  }
-  .project-img {
-    height: 120px; display: flex; align-items: center; justify-content: center;
-    font-size: 2.5rem; position: relative; overflow: hidden;
-  }
-  .project-body { padding: 18px; }
-  .project-title {
-    font-family: 'Playfair Display', serif; font-size: 1rem; color: #fff;
-    font-weight: 700; margin-bottom: 6px;
-  }
-  .project-desc { font-size: 0.82rem; color: rgba(255,255,255,0.7); line-height: 1.6; }
-  .project-tags { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
-  .project-tag {
-    font-size: 0.72rem; padding: 4px 10px; border-radius: 20px; color: #8fe08e;
-    background: rgba(143,224,142,0.18); border: 1px solid rgba(143,224,142,0.35);
-  }
-  .project-card.hidden { display: none; }
-  .carousel-wrap {
-    position: relative; overflow: hidden; border-radius: 20px;
-    border: 1px solid rgba(143,224,142,0.3); background: rgba(0,0,0,0.35); height: 80px;
-    display: flex; align-items: center;
-  }
-  .carousel-track { display: flex; transition: transform 0.5s cubic-bezier(0.77,0,0.18,1); height: 100%; }
-  .carousel-item {
-    min-width: 100%; height: 100%; display: flex; align-items: center;
-    justify-content: center; gap: 14px; padding: 0 60px;
-    color: rgba(255,255,255,0.9); font-size: 0.9rem; font-style: italic;
-  }
-  .carousel-item span { font-size: 1.4rem; }
-  .carousel-btn {
-    position: absolute; top: 50%; transform: translateY(-50%);
-    width: 36px; height: 36px; border-radius: 50%;
-    background: rgba(143,224,142,0.25); border: 1px solid rgba(143,224,142,0.4);
-    color: #8fe08e; cursor: none; display: flex; align-items: center; justify-content: center;
-    font-size: 1rem; transition: background 0.3s, transform 0.3s; z-index: 2; overflow: hidden;
-  }
-  .carousel-btn:hover {
-    background: rgba(143,224,142,0.45); transform: translateY(-50%) scale(1.1);
-  }
-  .carousel-btn.prev { left: 8px; } .carousel-btn.next { right: 8px; }
+/* 右侧样式 - 简介卡片区域 */
+.autumn-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* 防止溢出 */
+}
+      @keyframes spinRing {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .avatar-img {
+        position: relative;
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #ff7a1f, #ffbc3d);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 70px;
+        z-index: 1;
+        transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-shadow: 0 0 50px rgba(255, 188, 61, 0.6);
+      }
+      .avatar-img:hover {
+        transform: scale(1.07);
+      }
+      .autumn-name {
+        font-family: "Playfair Display", serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #fff0d2;
+        text-align: center;
+        line-height: 1.1;
+         letter-spacing: 0.05em; /* ✅ 新增：减少字间距（原来是 0.2em）*/
+        text-shadow: 0 0 50px rgba(255, 188, 61, 0.7);
+      }
+      .autumn-title {
+        font-size: 1.25rem;
+        color: #ffbc3d;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        text-align: center;
+      }
+      .autumn-right {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%; /* 确保占满整列 */
+  max-width: 100%; /* 防止溢出 */
+}
+/* 2. 新增：名字和学历的透明框样式 */
+.autumn-info-box {
+  /* 关键：使用和下面卡片一样的毛玻璃透明色 */
+  background: linear-gradient(135deg, rgba(210, 188, 255, 0.55), rgba(255, 204, 204, 0.35)); 
+  backdrop-filter: blur(15px); /* 模糊背景 */
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.4); /* 淡淡的白色边框 */
+  border-radius: 24px; /* 和下面卡片一样的圆角 */
+  padding: 25px 40px; /* 内部留白 */
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05); /* 淡淡的阴影 */
+  margin-top: 20px; /* 头像和文字框之间的间距 */
+  width: 100%; /* 宽度占满 */
+  max-width: 600px; /* 限制最大宽度，太宽了不好看 */
+}
 
-  /* ==================== 夏天頁面 ==================== */
-  #summer .section-content { display: flex; flex-direction: column; gap: 30px; padding-top: 110px; }
-  .summer-heading {
-    font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700;
-    color: #e8f4ff; text-align: center;
-  }
-  .timeline {
-    position: relative; display: flex; flex-direction: column; gap: 0;
-    max-width: 700px; margin: 0 auto; width: 100%;
-  }
-  .timeline::before {
-    content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px;
-    background: linear-gradient(to bottom, transparent, #52c2ff, #ff914d, transparent);
-    transform: translateX(-50%);
-  }
-  .timeline-item {
-    position: relative; display: grid; grid-template-columns: 1fr 60px 1fr;
-    align-items: start; gap: 0; padding: 10px 0;
-  }
-  .timeline-item:nth-child(odd) .tl-content { grid-column: 1; grid-row: 1; text-align: right; padding-right: 24px; }
-  .timeline-item:nth-child(odd) .tl-dot { grid-column: 2; }
-  .timeline-item:nth-child(odd) .tl-empty { grid-column: 3; }
-  .timeline-item:nth-child(even) .tl-empty { grid-column: 1; }
-  .timeline-item:nth-child(even) .tl-dot { grid-column: 2; }
-  .timeline-item:nth-child(even) .tl-content { grid-column: 3; grid-row: 1; padding-left: 24px; }
-  .tl-dot { display: flex; align-items: center; justify-content: center; padding-top: 16px; }
-  .tl-dot-inner {
-    width: 44px; height: 44px; border-radius: 50%;
-    background: linear-gradient(135deg, #52c2ff, #ff914d);
-    display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
-    box-shadow: 0 0 30px rgba(82,194,255,0.6);
-    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s; cursor: default;
-  }
-  .tl-dot-inner:hover {
-    transform: scale(1.3);
-    box-shadow: 0 0 50px rgba(82,194,255,0.8), 0 0 100px rgba(255,145,77,0.4);
-  }
-  .tl-content {
-    padding: 16px 20px; border-radius: 16px; cursor: default;
-    transition: box-shadow 0.3s, transform 0.3s;
-  }
-  .tl-content:hover { box-shadow: 0 8px 40px rgba(82,194,255,0.3); transform: translateY(-3px); }
-  .tl-job { font-family: 'Playfair Display', serif; font-size: 1rem; font-weight: 700; color: #fff; }
-  .tl-company { font-size: 0.85rem; color: #52c2ff; margin-top: 3px; font-weight: 500; }
-  .tl-date { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 4px; letter-spacing: 0.08em; }
-  .tl-desc { font-size: 0.82rem; color: rgba(255,255,255,0.7); line-height: 1.6; margin-top: 8px; }
-  #rainbow {
-    position: absolute; bottom: -140px; left: 50%; transform: translateX(-50%);
-    width: 1400px; height: 700px; border-radius: 50%;
-    background: conic-gradient(
-      rgba(255,0,0,0), rgba(255,0,0,0.25), rgba(255,165,0,0.25), rgba(255,255,0,0.2),
-      rgba(0,255,0,0.2), rgba(0,255,255,0.18), rgba(0,0,255,0.18), rgba(75,0,130,0.15),
-      rgba(148,0,211,0.15), rgba(255,0,0,0)
-    );
-    mask: radial-gradient(circle at bottom center, transparent 60%, black 60%);
-    -webkit-mask: radial-gradient(circle at bottom center, transparent 60%, black 60%);
-    opacity: 0; animation: rainbowFade 8s infinite ease-in-out; z-index: 1;
-  }
-  @keyframes rainbowFade { 0%,100% { opacity: 0; } 40%,60% { opacity: 0.5; } }
+/* 调整框内文字的颜色，因为是透明背景，用深色更清晰 */
+.autumn-info-box .autumn-name {
+  color: #1a1a1a; /* 深黑色字 */
+  font-size: 2.2rem; /* 名字大小 */
+  margin: 0 0 8px 0;
+  text-shadow: none; /* 去掉之前的发光特效，显得更高级 */
+}
+.autumn-info-box .autumn-title {
+  color: #4a4a4a; /* 深灰色字 */
+  font-size: 1.05rem; /* 学历大小 */
+  margin: 0;
+  letter-spacing: 0.05em; /* 字间距 */
+}
+/* 让左边的文字横向排列 */
+.autumn-info-group {
+  display: flex; /* 横向布局 */
+  flex-direction: column; /* 如果屏幕窄就换行，宽就横排 */
+  align-items: flex-start; /* 左对齐 */
+  gap: 15px; /* 两个框之间的间距 */
+  margin-top: 20px;
+}
 
-  #footer {
-    height: auto; min-height: 80px; scroll-snap-align: start; background: #000;
-    display: flex; align-items: center; justify-content: center; flex-direction: column;
-    gap: 6px; padding: 30px; border-top: 1px solid rgba(255,255,255,0.1);
+/* 适配横屏/大宽屏时，让它们在一行 */
+@media (min-width: 1024px) {
+  .autumn-info-group {
+    flex-direction: row; /* 强制横排 */
+    align-items: center;
   }
-  #footer p { color: rgba(255,255,255,0.5); font-size: 0.8rem; text-align: center; }
+}
 
-  @media (max-width: 768px) {
-    #topbar { padding: 14px 20px; }
-    .autumn-name { font-size: 1.8rem; }
-    #autumn .section-content, #winter .section-content { grid-template-columns: 1fr; padding-top: 90px; }
-    .projects-grid { grid-template-columns: 1fr; overflow-y: auto; }
-    .timeline::before { left: 24px; }
-    .timeline-item { grid-template-columns: 48px 1fr; }
-    .timeline-item:nth-child(odd) .tl-content, .timeline-item:nth-child(even) .tl-content { grid-column: 2; text-align: left; padding-left: 16px; padding-right: 8px; }
-    .timeline-item:nth-child(odd) .tl-dot, .timeline-item:nth-child(even) .tl-dot { grid-column: 1; grid-row: 1; }
-    .tl-empty { display: none; }
-    .welcome-text { font-size: 2rem; }
+/* 给每个文字框设置样式 */
+.autumn-text-box {
+  background: rgba(0, 0, 0, 0.3); /* 半透明深色背景 */
+  padding: 10px 25px;
+  border-radius: 15px; /* 圆角 */
+  backdrop-filter: blur(5px);
+}
+
+.autumn-text-box .autumn-name {
+  margin: 0;
+  font-size: 2.2rem;
+  color: #fff; /* 白色文字 */
+}
+
+.autumn-text-box .autumn-title {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #f23824; /* 金色文字 */
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+      .bio-card {
+        padding: 35px;
+      }
+      
+      .bio-text {
+        color: rgba(255, 240, 210, 0.9);
+        line-height: 1.8;
+        font-size: 0.95rem;
+      }
+      .contact-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 16px;
+        color: #1b1b1b;
+        font-size: 0.88rem;
+      }
+      .social-row {
+        display: flex;
+        gap: 14px;
+        margin-top: 8px;
+      }
+      .social-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: rgba(255, 188, 61, 0.2);
+        border: 1px solid rgba(255, 188, 61, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #de8d24;
+        font-size: 1.2rem;
+        cursor: none;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        text-decoration: none;
+      }
+      .social-icon:hover {
+        transform: scale(1.25) translateY(-4px);
+        background: rgba(255, 188, 61, 0.4);
+        box-shadow: 0 8px 25px rgba(255, 188, 61, 0.6);
+      }
+
+      /* ==================== 冬天頁面 ==================== */
+      #winter .section-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+        align-items: start;
+        padding-top: 120px;
+      }
+      .winter-heading {
+        font-family: "Playfair Display", serif;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #f0f8ff;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .award-list {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .award-item {
+  padding: 18px 22px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: default;
+  background: rgba(255, 255, 255, 0.6);  /* 添加：深色半透明背景 */
+  border-radius: 16px;  /* 添加：圆角 */
+  margin-bottom: 12px;  /* 添加：项目之间的间距 */
+  backdrop-filter: blur(4px);  /* 可选：轻微毛玻璃效果 */
+}
+      .award-item:hover {
+        transform: translateX(6px);
+        box-shadow: 0 8px 30px rgba(200, 228, 255, 0.25);
+      }
+      .trophy-icon {
+        font-size: 1.6rem;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+      .award-info h4 {
+  color: #080000; /* 纯白，和背景形成强烈对比 */
+  font-size: 1.15rem; /* 字号加大 */
+  font-weight: 700; /* 字重加粗 */
+  text-shadow: 0 1px 3px rgba(255, 254, 254, 0.3); /* 加一点点阴影，防止被背景干扰 */
+}
+      .award-info p {
+        color: #221000;
+        font-size: 0.82rem;
+        margin-top: 3px;
+      }
+      .award-year {
+        font-size: 0.75rem;
+        color: #a0d1ff;
+        background: rgba(255, 255, 255, 0.15);
+        padding: 3px 10px;
+        border-radius: 20px;
+        margin-top: 6px;
+        display: inline-block;
+      }
+      .skills-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .skill-badge {
+        padding: 10px 18px;
+        border-radius: 50px;
+        font-size: 0.rem;
+        font-weight: 800;
+        color: #ffffff;
+        background: rgba(0, 0, 0, 0.15);
+        border: 1px solid rgba(200, 228, 255, 0.3);
+        cursor: none;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        position: relative;
+      }
+      .skill-badge:hover {
+        transform: scale(1.15) translateY(-3px);
+        background: rgba(0, 0, 0, 0.35);
+        border-color: rgba(200, 228, 255, 0.7);
+        box-shadow: 0 0 25px rgba(200, 228, 255, 0.5),
+          0 0 50px rgba(200, 228, 255, 0.3);
+        color: #fff;
+      }
+      #snowman {
+        position: absolute;
+        bottom: 40px;
+        right: 60px;
+        font-size: 80px;
+        z-index: 3;
+        filter: drop-shadow(0 0 30px rgba(200, 228, 255, 0.7));
+        transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+        will-change: transform;
+      }
+
+      /* ==================== 春天頁面 ==================== */
+      #spring .section-content {
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+        padding-top: 100px;
+        height: 100%;
+        overflow: hidden;
+      }
+      .spring-heading {
+        font-family: "Playfair Display", serif;
+        font-size: 2rem;
+        font-weight: 700;
+        color: #fff;
+        text-align: center;
+      }
+      .search-wrap {
+        position: relative;
+        max-width: 440px;
+        margin: 0 auto;
+      }
+      .search-input {
+        width: 100%;
+        padding: 14px 22px 14px 50px;
+        border-radius: 50px;
+        border: 1px solid rgba(143, 224, 142, 0.4);
+        background: rgba(143, 224, 142, 0.12);
+        color: #fff;
+        font-family: "DM Sans", sans-serif;
+        font-size: 0.9rem;
+        outline: none;
+        transition: border 0.3s, box-shadow 0.3s;
+      }
+      .search-input::placeholder {
+        color: rgba(13, 0, 0, 0.5);
+      }
+      .search-input:focus {
+        border-color: rgba(143, 224, 142, 0.8);
+        box-shadow: 0 0 0 5px rgba(143, 224, 142, 0.15);
+      }
+      .search-icon {
+        position: absolute;
+        left: 18px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1rem;
+        color: #8fe08e;
+        pointer-events: none;
+      }
+      .projects-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        flex: 1;
+        overflow: hidden;
+      }
+      .project-card {
+        padding: 0;
+        overflow: hidden;
+        cursor: none;
+        transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+          box-shadow 0.4s;
+        transform-style: preserve-3d;
+      }
+      .project-card:hover {
+        transform: translateY(-8px) scale(1.03);
+        box-shadow: 0 20px 60px rgba(255, 255, 255, 0.3),
+          0 0 0 1px rgba(1, 41, 0, 0.4);
+      }
+      .project-img {
+        height: 120px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        position: relative;
+        overflow: hidden;
+      }
+      .project-body {
+        padding: 18px;
+      }
+      .project-title {
+        font-family: "Playfair Display", serif;
+        font-size: 1rem;
+        color: #fff;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .project-desc {
+        font-size: 0.82rem;
+        color: rgba(255, 255, 255, 0.7);
+        line-height: 1.6;
+      }
+      .project-tags {
+        display: flex;
+        gap: 6px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+      .project-tag {
+        font-size: 0.72rem;
+        padding: 4px 10px;
+        border-radius: 20px;
+        color: #000200;
+        background: rgba(143, 224, 142, 0.18);
+        border: 1px solid rgba(143, 224, 142, 0.35);
+      }
+      .project-card.hidden {
+        display: none;
+      }
+      .carousel-wrap {
+        position: relative;
+        overflow: hidden;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(0, 0, 0, 0.35);
+        height: 80px;
+        display: flex;
+        align-items: center;
+      }
+      .carousel-track {
+        display: flex;
+        transition: transform 0.5s cubic-bezier(0.77, 0, 0.18, 1);
+        height: 100%;
+      }
+      .carousel-item {
+        min-width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        padding: 0 60px;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.9rem;
+        font-style: italic;
+      }
+      .carousel-item span {
+        font-size: 1.4rem;
+      }
+      .carousel-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(143, 224, 142, 0.25);
+        border: 1px solid rgba(143, 224, 142, 0.4);
+        color: #8fe08e;
+        cursor: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        transition: background 0.3s, transform 0.3s;
+        z-index: 2;
+        overflow: hidden;
+      }
+      .carousel-btn:hover {
+        background: rgba(143, 224, 142, 0.45);
+        transform: translateY(-50%) scale(1.1);
+      }
+      .carousel-btn.prev {
+        left: 8px;
+      }
+      .carousel-btn.next {
+        right: 8px;
+      }
+
+      /* ==================== 夏天頁面 ==================== */
+      #summer .section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  padding-top: 110px;
+  height: 100%;
+  overflow-y: auto;  /* 允许垂直滚动 */
+  padding-bottom: 40px;  /* 底部留白 */
+}
+
+/* 自定义滚动条样式（可选） */
+#summer .section-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+#summer .section-content::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+#summer .section-content::-webkit-scrollbar-thumb {
+  background: rgba(82, 194, 255, 0.5);
+  border-radius: 3px;
+}
+      .summer-heading {
+        font-family: "Playfair Display", serif;
+        font-size: 2rem;
+        font-weight: 700;
+        color: #e8f4ff;
+        text-align: center;
+      }
+      .timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+      .timeline::before {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(
+          to bottom,
+          transparent,
+          #52c2ff,
+          #ff914d,
+          transparent
+        );
+        transform: translateX(-50%);
+      }
+      /* 時間軸項目 - 加大版 */
+.timeline-item {
+  position: relative;
+  display: grid;
+  /* 關鍵：中間圓點區縮小到 50px，兩邊內容區自動變寬 */
+  grid-template-columns: 1fr 60px 1fr;
+  align-items: start;
+  gap: 0;
+  padding: 30px 0; /* 加大上下間距 */
+}
+
+/* 奇數項目（左側卡片）*/
+.timeline-item:nth-child(odd) .tl-content {
+  grid-column: 1;
+  grid-row: 1;
+  text-align: right;
+  padding: 30px 40px; /* 加大內邊距 */
+  margin-right: 30px; /* 關鍵：讓卡片向右延伸，減少留白 */
+}
+.timeline-item:nth-child(odd) .tl-dot {
+  grid-column: 2;
+   grid-row: 1;
+}
+.timeline-item:nth-child(odd) .tl-empty {
+  grid-column: 3;
+}
+
+/* 偶數項目（右側卡片）*/
+.timeline-item:nth-child(even) .tl-empty {
+  grid-column: 1;
+}
+.timeline-item:nth-child(even) .tl-dot {
+  grid-column: 2;
+}
+.timeline-item:nth-child(even) .tl-content {
+  grid-column: 3;
+  grid-row: 1;
+  padding: 30px 40px; /* 加大內邊距 */
+  margin-left: 30px; /* 關鍵：讓卡片向左延伸，減少留白 */
+}
+      .tl-dot {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding-top: 16px;
+      }
+      .tl-dot-inner {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #52c2ff, #ff914d);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8 rem;
+        box-shadow: 0 0 30px rgba(82, 194, 255, 0.6);
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+          box-shadow 0.3s;
+        cursor: default;
+      }
+      .tl-dot-inner:hover {
+        transform: scale(1.3);
+        box-shadow: 0 0 50px rgba(82, 194, 255, 0.8),
+          0 0 100px rgba(255, 145, 77, 0.4);
+      }
+
+/* 內容卡片基礎樣式 - 加大版 */
+.tl-content {
+  padding: 30px 40px; /* 內邊距加大 */
+  border-radius: 20px; /* 圓角稍微加大 */
+  cursor: default;
+  transition: box-shadow 0.3s, transform 0.3s;
+  min-height: 220px; /* 增加最小高度，讓卡片更飽滿 */
+}
+.tl-content:hover {
+  box-shadow: 0 12px 50px rgba(82, 194, 255, 0.4); /* 懸停陰影加強 */
+  transform: translateY(-5px); /* 懸停上浮更多 */
+}
+      .tl-job {
+        font-family: "Playfair Display", serif;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #ffffff;
+      }
+      .tl-company {
+        font-size: 0.85rem;
+        color: #044370;
+        margin-top: 3px;
+        font-weight: 500;
+      }
+      .tl-date {
+  font-size: 0.95rem; /* 这里改大！ */
+  color: rgba(168, 12, 12, 0.764);
+  margin-top: 4px;
+  letter-spacing: 0.08em;
+}
+      .tl-desc {
+  font-size: 1rem; /* 这里改大！ */
+  color: rgba(249, 3, 3, 0.9); /* 建议改成 0.9 会更亮更清晰 */
+  line-height: 1.8; /* 行高加大，字大了才不会挤在一起 */
+  margin-top: 8px;
+}
+      #rainbow {
+        position: absolute;
+        bottom: -140px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 1400px;
+        height: 700px;
+        border-radius: 50%;
+        background: conic-gradient(
+          rgba(255, 0, 0, 0),
+          rgba(255, 0, 0, 0.25),
+          rgba(255, 165, 0, 0.25),
+          rgba(255, 255, 0, 0.2),
+          rgba(0, 255, 0, 0.2),
+          rgba(0, 255, 255, 0.18),
+          rgba(0, 0, 255, 0.18),
+          rgba(75, 0, 130, 0.15),
+          rgba(148, 0, 211, 0.15),
+          rgba(255, 0, 0, 0)
+        );
+        mask: radial-gradient(
+          circle at bottom center,
+          transparent 60%,
+          black 60%
+        );
+        -webkit-mask: radial-gradient(
+          circle at bottom center,
+          transparent 60%,
+          black 60%
+        );
+        opacity: 0;
+        animation: rainbowFade 8s infinite ease-in-out;
+        z-index: 1;
+      }
+      @keyframes rainbowFade {
+        0%,
+        100% {
+          opacity: 0;
+        }
+        40%,
+        60% {
+          opacity: 0.5;
+        }
+      }
+
+      #footer {
+        height: auto;
+        min-height: 80px;
+        scroll-snap-align: start;
+        background: transparent; /* ✅ 把原来的 #000 改成 transparent (透明) */
+  /* 或者用 rgba(0,0,0,0.2) 如果想要一点点遮罩让字更清楚 */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 6px;
+        padding: 30px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);/* 保留这条淡淡的分割线 */
+      }
+      #footer p {
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 0.8rem;
+        text-align: center;
+      }
+
+      @media (max-width: 768px) {
+        #topbar {
+          padding: 14px 20px;
+        }
+        .autumn-name {
+          font-size: 1.8rem;
+        }
+  #autumn .section-content {
+    display: flex;
+    flex-direction: column; /* 上下排列 */
+    gap: 30px;
+    align-items: center;
+    padding: 80px 20px 20px; /* 上下左右都留边 */
   }
+}
+        #winter .section-content {
+          grid-template-columns: 1fr;
+          padding-top: 90px;
+        }
+        .projects-grid {
+          grid-template-columns: 1fr;
+          overflow-y: auto;
+        }
+        .timeline::before {
+          left: 24px;
+        }
+        .timeline-item {
+          grid-template-columns: 48px 1fr;
+        }
+        .timeline-item:nth-child(odd) .tl-content,
+        .timeline-item:nth-child(even) .tl-content {
+          grid-column: 2;
+          text-align: left;
+          padding-left: 16px;
+          padding-right: 8px;
+        }
+        .timeline-item:nth-child(odd) .tl-dot,
+        .timeline-item:nth-child(even) .tl-dot {
+          grid-column: 1;
+          grid-row: 1;
+        }
+        .tl-empty {
+          display: none;
+        }
+        .welcome-text {
+          font-size: 2rem;
+        }
+      @keyframes snowmanBlink {
+        0%,
+        90%,
+        100% {
+          transform: scaleY(1);
+        }
+        92%,
+        98% {
+          transform: scaleY(0.1);
+        }
+      }
+      /* 加大所有标题字号（清晰可读优化） */
+.autumn-name {
+  font-size: 2.8rem !important;
+}
+.winter-heading,
+.spring-heading,
+.summer-heading {
+  font-size: 2.5rem !important;
+}
 
-  @keyframes snowmanBlink { 0%, 90%, 100% { transform: scaleY(1); } 92%, 98% { transform: scaleY(0.1); } }
-  
-</style>
+/* 卡片点击展开收起样式 */
+.detail-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease;
+  margin-top: 12px;
+  line-height: 1.8;
+}
+.card-expanded .detail-content {
+  max-height: 600px;
+}
+/* 全局所有盒子统一悬浮放大互动 */
+.glass,
+.award-item,
+.tl-content,
+.project-card,
+.skill-badge {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+/* 鼠标移入上浮+放大 */
+.glass:hover,
+.award-item:hover,
+.tl-content:hover,
+.project-card:hover {
+  transform: scale(1.04) translateY(-5px) !important;
+  box-shadow: 0 12px 40px rgba(255, 255, 255, 0.28) !important;
+}
+/* 名字和标题的透明背景框 */
+.autumn-name,
+.autumn-title {
+  background: rgba(0, 0, 0, 0.35); /* 半透明黑色背景 */
+  backdrop-filter: blur(8px); /* 毛玻璃效果 */
+  padding: 8px 20px; /* 内边距 */
+  border-radius: 12px; /* 圆角 */
+  display: inline-block; /* 让背景框紧贴文字 */
+  margin: 8px 0; /* 上下间距 */
+}
 
+/* 名字的框稍微大一点 */
+.autumn-name {
+  padding: 12px 30px;
+  background: rgba(0, 0, 0, 0.4); /* 更不透明一点 */
+}
 
+/* 确保文字在框内居中 */
+.autumn-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;  /* 水平居中 */
+  justify-content: center;  /* 垂直居中 */
+  gap: 20px;  /* 头像、名字、学历之间的间距 */
+}
+/* 展开按钮样式 */
+.toggle-btn {
+  cursor: pointer;
+  color: #ffbc3d;
+  font-weight: bold;
+  font-size: 0.9rem;
+  margin: 15px 0;
+  user-select: none;
+  transition: color 0.2s;
+}
+.toggle-btn:hover {
+  color: #fff;
+}
 
-<!-- ==================== 1. 動態背景層 ==================== -->
-<!-- 層 1: Welcome 背景 (星空圖) -->
+/* 详情内容样式（默认隐藏） */
+.detail-content {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.5s ease, opacity 0.3s ease;
+  color: #333;
+}
+
+/* 展开时的样式 */
+.detail-content.show {
+  max-height: 300px; /* 根据内容调整高度 */
+  opacity: 1;
+  margin-top: 10px;
+}
+    </style>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <!-- ==================== 1. 動態背景層 ==================== -->
+    <!-- 層 1: Welcome 背景 (星空圖) -->
 <div id="bg-welcome-layer">
+  <video id="bg-welcome-video" autoplay muted loop playsinline preload="auto">
+    <source src="./videos/autumn.mov" type="video/quicktime">
+  </video>
   <div id="bg-video-overlay"></div>
 </div>
 
-<!-- 層 2: 季節背景圖 (JS 動態切換) -->
-<div id="bg-season-layer" style="background-image: url(&quot;https://i.pinimg.com/736x/c6/ea/64/c6ea64fb139b96700789c4c78dc30a6d.jpg&quot;);"></div>
-
-<!-- ==================== 開場歡迎頁 ==================== -->
-<div id="welcome">
-  <div class="welcome-text" onclick="enterWebsite()">Welcome to Reina's world</div>
+    <!-- 層 2: 季節背景圖 (JS 動態切換) -->
+<div id="bg-season-layer">
+<video class="season-video" id="video-autumn" muted loop playsinline><source src="./videos/autumn.mov""></video>
+  <video class="season-video" id="video-winter" muted loop playsinline><source src="./videos/winter.mov""></video>
+  <video class="season-video" id="video-spring" muted loop playsinline><source src="./videos/spring.mov""></video>
+  <video class="season-video" id="video-summer" muted loop playsinline><source src="./videos/summer.mov""></video>
 </div>
 
-<!-- ==================== 自定義滑鼠 ==================== -->
-<div id="cursor-follower" style="left: 299px; top: 83px;">🍂</div>
-
-<!-- ==================== 頂部導航欄 ==================== -->
-<nav id="topbar">
-  <div class="logo" data-en="✦ Reina's World" data-zh="✦ Reina 的世界">✦ Reina's World</div>
-  <div class="controls">
-    <div class="dropdown-wrap">
-      <button class="dropdown-btn ripple-container" id="dropdownBtn" onclick="toggleDropdown(event)">
-        <span data-en="Jump to Section" data-zh="跳轉章節">Jump to Section</span> ▾
-      </button>
-      <div class="dropdown-menu" id="dropdownMenu">
-        <a href="#autumn" onclick="closeDropdown()"> <span data-en="Autumn — About" data-zh="秋 — 關於我">Autumn — About</span></a>
-        <a href="#winter" onclick="closeDropdown()">❄️ <span data-en="Winter — Skills" data-zh="冬 — 技能">Winter — Skills</span></a>
-        <a href="#spring" onclick="closeDropdown()">🌸 <span data-en="Spring — Projects" data-zh="春 — 作品">Spring — Projects</span></a>
-        <a href="#summer" onclick="closeDropdown()">️ <span data-en="Summer — Timeline" data-zh="夏 — 經歷">Summer — Timeline</span></a>
+    <!-- ==================== 開場歡迎頁 ==================== -->
+    <div id="welcome">
+      <div class="welcome-text" onclick="enterWebsite()">
+        Welcome to Reina's world
       </div>
     </div>
-    <button class="lang-toggle ripple-container" id="langBtn" onclick="toggleLang(event)">EN / 中文</button>
-  </div>
-</nav>
 
-<!-- ==================== 秋天頁面 ==================== -->
-<section id="autumn">
-  <canvas class="bg-canvas" id="autumnCanvas" width="712" height="446"></canvas>
-  <div class="section-content">
-    <div class="autumn-left">
-      <div class="avatar-wrap">
-        <div class="avatar-ring"></div>
-        <div class="avatar-img">👸</div>
+    <!-- ==================== 自定義滑鼠 ==================== -->
+    <div id="cursor-follower"></div>
+
+    <!-- ==================== 頂部導航欄 ==================== -->
+    <nav id="topbar">
+      <div class="logo" data-en="✦ Reina's World" data-zh="✦ Reina 的世界" data-chs="✦ Reina 的世界">
+        ✦ Reina's World
       </div>
-      <div class="autumn-name" data-en="Reina" data-zh="芮娜">Reina</div>
-      <div class="autumn-title" data-en="Creator &amp; Artist" data-zh="創作者 &amp; 藝術家">Creator &amp; Artist</div>
-    </div>
-    <div class="autumn-right">
-      <div class="glass bio-card">
-        <p class="bio-text" data-en="Welcome to my colorful seasonal world! I share my creations, artworks, and stories through four beautiful seasons. Every page is full of love and imagination." data-zh="歡迎來到我繽紛的季節世界！我透過美麗的春夏秋冬分享我的創作、藝術與故事，每一頁都充滿愛與想像。">
-          Welcome to my colorful seasonal world! I share my creations, artworks, and stories through four beautiful seasons. Every page is full of love and imagination.
-        </p>
-        <div class="contact-row">
-           <span>hello@reina.world</span>
-        </div>
-        <div class="social-row">
-          <a class="social-icon" href="#" title="Instagram">🌈</a>
-          <a class="social-icon" href="#" title="TikTok">🎵</a>
-          <a class="social-icon" href="#" title="YouTube"></a>
-          <a class="social-icon" href="#" title="Pinterest">📌</a>
-          <a class="social-icon" href="#" title="Email">✉</a>
-        </div>
-      </div>
+    <div class="controls">
+  <div class="dropdown-wrap">
+<button class="dropdown-btn ripple-container" id="dropdownBtn" onclick="toggleDropdown(event)">
+  <span data-en="Jump to Section" data-zh="跳轉章節" data-chs="跳转章节">Jump to Section</span>
+  ▾
+</button>
+    <div class="dropdown-menu" id="dropdownMenu">
+      <a href="#autumn" onclick="closeDropdown()">🍂
+        <span data-en="Autumn-About" data-zh="關於我" data-chs="关于我"
+          >About me</span
+        ></a
+      >
+      <a href="#winter" onclick="closeDropdown()"
+        >❄️
+        <span data-en="Winter-Skills" data-zh="獎項&技能" data-chs="奖项&技能"
+          >Skills</span
+        ></a
+      >
+      <a href="#spring" onclick="closeDropdown()"
+        >🌸
+        <span data-en="Spring—Projects" data-zh="作品集" data-chs="作品集"
+          >Projects</span
+        ></a
+      >
+      <a href="#summer" onclick="closeDropdown()"
+        >️🌈
+        <span data-en="Summer—Timeline" data-zh="經歷" data-chs="经历"
+          >Timeline</span
+        ></a
+      >
     </div>
   </div>
-</section>
+  <a href="index2.html" class="top-link ripple-container">
+    <span data-en="Mini Theater" data-zh="小劇場" data-chs="小剧场">Mini Theater</span>
+  </a>
+  <!-- 新增掛斷按鈕 點擊返回index3 -->
+  <button class="lang-toggle ripple-container" onclick="location.href='index3.html'">
+    <span data-en="Hang Up" data-zh="掛斷電話" data-chs="挂断电话">Hang Up</span>
+  </button>
+  <button
+    class="lang-toggle ripple-container"
+    id="langBtn"
+    onclick="toggleLang(event)"
+  >
+    <span data-en="繁體" data-zh="简体" data-chs="EN">繁體</span>
+  </button>
+</div>
+    </nav>
 
-<!-- ==================== 冬天頁面 ==================== -->
-<section id="winter">
-  <canvas class="bg-canvas" id="winterCanvas" width="712" height="446"></canvas>
-  <div id="snowman" style="transform: rotate(-49.5811deg); animation: 1.2s ease-in-out 0s 1 normal none running snowmanBlink;">⛄</div>
-  <div class="section-content">
-    <div>
-      <div class="winter-heading">🏆 <span data-en="Awards" data-zh="獎項">Awards</span></div>
-      <div class="award-list">
-        <div class="glass award-item">
-          <div class="trophy-icon"></div>
-          <div class="award-info">
-            <h4 data-en="Best Creative Work" data-zh="最佳創作獎">Best Creative Work</h4>
-            <p data-en="Award-winning art design with unique color and style" data-zh="獨特色彩與風格的得獎藝術設計">Award-winning art design with unique color and style</p>
-            <span class="award-year">2025</span>
+    <!-- ==================== 秋天頁面 ==================== -->
+    <section id="autumn">
+      <canvas class="bg-canvas" id="autumnCanvas"></canvas>
+      <div class="section-content">
+        
+        <div class="autumn-left">
+          <div class="avatar-wrap">
+            <div class="avatar-img" style="background: none; padding: 0; overflow: hidden;">
+  <img src="./img/Reina.jpg" 
+       alt="Reina" 
+       style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+</div>
+          <h3 class="autumn-name" data-en="Reina" data-zh="王睿" data-chs="王睿 (Reina)">
+            WANG RUI (Reina) </h3>
+        <p class="autumn-title" 
+               data-en="Year 3, Bachelor of Translation with Business (Hons)" 
+               data-zh="三年級 翻譯與商業（榮譽）學士"
+               data-chs="三年级 翻译与商业（荣誉）学士">
+              Year 3, Bachelor of Translation with Business (Hons)
+            </p>
           </div>
         </div>
-        <div class="glass award-item">
-          <div class="trophy-icon">🌟</div>
-          <div class="award-info">
-            <h4 data-en="Most Popular Creator" data-zh="最受歡迎創作者">Most Popular Creator</h4>
-            <p data-en="Loved by many audiences for warm and lovely works" data-zh="以溫暖可愛的作品受到眾多觀眾喜愛">Loved by many audiences for warm and lovely works</p>
-            <span class="award-year">2024</span>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div>
-      <div class="winter-heading">⚡ <span data-en="Skills" data-zh="技能">Skills</span></div>
-      <div class="skills-grid">
-        <span class="skill-badge">Art Design</span>
-        <span class="skill-badge">Illustration</span>
-        <span class="skill-badge">Video Editing</span>
-        <span class="skill-badge">Photography</span>
-        <span class="skill-badge">Creative Writing</span>
-        <span class="skill-badge">UI Design</span>
-        <span class="skill-badge">Animation</span>
-        <span class="skill-badge">Handmade</span>
-      </div>
-    </div>
+        <div class="autumn-right">
+        <div class="glass bio-card">
+  <!-- 简介部分（一直显示） -->
+  <p class="bio-text"
+     data-en="Year 3 undergraduate with work experience in customer service, operational support, and video production. Skilled in Adobe Premiere Pro, Capcut, and Microsoft Office."
+     data-zh="三年級學生，擁有客戶服務、營運支援和影片製作經驗。精通 Premiere Pro、Capcut 和 Office。"
+     data-chs="三年级学生，拥有客户服务、运营支持和视频制作经验。精通 Premiere Pro、Capcut 和 Office。">
+    Year 3 undergraduate with work experience in customer service, operational support, and video production. Skilled in Adobe Premiere Pro, Capcut, and Microsoft Office.
+  </p>
+
+  <!-- 点击展开/关闭的按钮 -->
+  <div class="toggle-btn" onclick="toggleDetails(this)">
+    <span class="btn-text" data-en="See My Details ▼" data-zh="查看更多詳情 ▼" data-chs="查看更多详情 ▼">See My Details ▼</span>
   </div>
-</section>
 
-<!-- ==================== 春天頁面 ==================== -->
-<section id="spring">
-  <canvas class="bg-canvas" id="springCanvas" width="712" height="446"></canvas>
-  <div class="section-content">
-    <div class="spring-heading" data-en="✦ Creations" data-zh="✦ 創作作品">✦ Creations</div>
-    <div class="search-wrap">
-      <span class="search-icon"></span>
-      <input type="text" class="search-input" id="searchInput" placeholder="Search creations..." oninput="filterProjects(this.value)">
-    </div>
-    <div class="carousel-wrap">
-      <div class="carousel-track" id="carouselTrack" style="transform: translateX(-100%);">
-        <div class="carousel-item"><span></span> <span data-en="Art is the way I speak to the world" data-zh="藝術是我與世界對話的方式">Art is the way I speak to the world</span></div>
-        <div class="carousel-item"><span>✨</span> <span data-en="Every creation comes from my heart" data-zh="每一件創作都來自我的真心">Every creation comes from my heart</span></div>
-        <div class="carousel-item"><span>🌸</span> <span data-en="Life is full of beauty and magic" data-zh="生活充滿美麗與魔法">Life is full of beauty and magic</span></div>
-      </div>
-      <button class="carousel-btn prev ripple-container" onclick="prevSlide(event)">‹</button>
-      <button class="carousel-btn next ripple-container" onclick="nextSlide(event)">›</button>
-    </div>
-    <div class="projects-grid" id="projectsGrid">
-      <div class="glass project-card" data-title-en="Rainbow Illustration" data-title-zh="彩虹插畫">
-        <div class="project-img" style="background: linear-gradient(135deg, #ff914d, #52c2ff);">🌈</div>
-        <div class="project-body">
-          <div class="project-title" data-en="Rainbow Illustration" data-zh="彩虹插畫">Rainbow Illustration</div>
-          <div class="project-desc" data-en="Hand-painted rainbow art with bright colors and warm feelings" data-zh="手繪彩虹藝術，色彩明亮充滿溫暖">Hand-painted rainbow art with bright colors and warm feelings</div>
-          <div class="project-tags">
-            <span class="project-tag">Art</span>
-            <span class="project-tag">Illustration</span>
-          </div>
-        </div>
-      </div>
-      <div class="glass project-card" data-title-en="Cute Cartoon" data-title-zh="可愛卡通">
-        <div class="project-img" style="background: linear-gradient(135deg, #ffb6d4, #8fe08e);">🐰</div>
-        <div class="project-body">
-          <div class="project-title" data-en="Cute Cartoon" data-zh="可愛卡通">Cute Cartoon</div>
-          <div class="project-desc" data-en="Lovely cartoon characters full of childlike fun" data-zh="充滿童心的可愛卡通角色">Lovely cartoon characters full of childlike fun</div>
-          <div class="project-tags">
-            <span class="project-tag">Cartoon</span>
-            <span class="project-tag">Character</span>
-          </div>
-        </div>
-      </div>
-      <div class="glass project-card" data-title-en="Magic Story" data-zh="魔法故事">
-        <div class="project-img" style="background: linear-gradient(135deg, #c8e4ff, #ffbc3d);"></div>
-        <div class="project-body">
-          <div class="project-title" data-en="Magic Story" data-zh="魔法故事">Magic Story</div>
-          <div class="project-desc" data-en="Fantasy story with beautiful pictures and warm plots" data-zh="擁有美麗畫面與溫暖劇情的奇幻故事">Fantasy story with beautiful pictures and warm plots</div>
-          <div class="project-tags">
-            <span class="project-tag">Story</span>
-            <span class="project-tag">Fantasy</span>
-          </div>
-        </div>
-      </div>
-    </div>
+  <!-- 隐藏的详细内容（默认不显示） -->
+<div class="detail-content">
+  <ul style="list-style: none; padding: 0; margin: 0; font-size: 0.9rem; line-height: 1.6;">
+    <li style="margin-bottom: 8px;">
+      <span data-en="❤️ Education: HSUHK (GPA 3.3/4.0)" 
+            data-zh="❤️ 學歷：香港恒生大學 (GPA 3.3/4.0)" 
+            data-chs="❤️ 学历：香港恒生大学 (GPA 3.3/4.0)">❤️ Education: HSUHK (GPA 3.3/4.0)</span>
+    </li>
+    <li style="margin-bottom: 8px;">
+      <span data-en="🏆 Awards: CTF Life Top 10 Finalist, GBA Entrepreneurship Most Promising Award" 
+            data-zh="🏆 獎項：周大福人壽十佳決賽入圍、大灣區創業營最具潛力發展獎" 
+            data-chs="🏆 奖项：周大福人寿十佳决赛入围、大湾区创业营最具潜力发展奖">🏆 Awards: CTF Life Top 10 Finalist, GBA Entrepreneurship Most Promising Award</span>
+    </li>
+    <li style="margin-bottom: 8px;">
+      <span data-en="💼 Experience: Student Helper, Ocean Park Intern, Video Editing Assistant" 
+            data-zh="💼 經歷：學生助理、海洋公園實習生、影片剪輯助理" 
+            data-chs="💼 经历：学生助理、海洋公园实习生、影片剪辑助理">💼 Experience: Student Helper, Ocean Park Intern, Video Editing Assistant</span>
+    </li>
+    <li>
+      <span data-en="🗣️ Languages: Mandarin (Native), English (Fluent), Cantonese (Fluent)" 
+            data-zh="🗣️ 語言：普通話（母語）、英文（流利）、廣東話（流利）" 
+            data-chs="🗣️ 语言：普通话（母语）、英文（流利）、广东话（流利）">🗣️ Languages: Mandarin (Native), English (Fluent), Cantonese (Fluent)</span>
+    </li>
+  </ul>
+</div>
+
+  <!-- 联系方式保持不变 -->
+  <div class="contact-row">
+    <span>wangrui1949@gmail.com</span>
   </div>
-</section>
-
-<!-- ==================== 夏天頁面 ==================== -->
-<section id="summer">
-  <canvas class="bg-canvas" id="summerCanvas" width="712" height="446"></canvas>
-  <div id="rainbow"></div>
-  <div class="section-content">
-    <div class="summer-heading" data-en="️ My Journey" data-zh="️ 我的歷程">☀️ My Journey</div>
-    <div class="timeline">
-      <div class="timeline-item">
-        <div class="glass tl-content">
-          <div class="tl-job" data-en="Artist" data-zh="藝術創作者">Artist</div>
-          <div class="tl-company">Reina's Studio</div>
-          <div class="tl-date">2023 — Now</div>
-          <div class="tl-desc" data-en="Creating beautiful artworks and sharing them with the world. Full of love and imagination every day." data-zh="創作美麗的藝術作品並與世界分享，每一天都充滿愛與想像。">Creating beautiful artworks and sharing them with the world. Full of love and imagination every day.</div>
-        </div>
-        <div class="tl-dot"><div class="tl-dot-inner">🎨</div></div>
-        <div class="tl-empty"></div>
-      </div>
-      <div class="timeline-item">
-        <div class="tl-empty"></div>
-        <div class="tl-dot"><div class="tl-dot-inner">🌟</div></div>
-        <div class="glass tl-content">
-          <div class="tl-job" data-en="Content Creator" data-zh="內容創作者">Content Creator</div>
-          <div class="tl-company">Social Media</div>
-          <div class="tl-date">2022 — 2023</div>
-          <div class="tl-desc" data-en="Sharing creative videos and art on social platforms, gaining love from many people." data-zh="在社交平台分享創意影片與藝術，獲得許多人的喜愛。">Sharing creative videos and art on social platforms, gaining love from many people.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ==================== 頁尾 ==================== -->
-<footer id="footer">
-  <p data-en="© 2025 Reina · Colorful Seasonal World" data-zh="© 2025 芮娜 · 繽紛季節世界">© 2025 Reina · Colorful Seasonal World</p>
-  <p data-en="Made with love and rainbows" data-zh="用愛與彩虹製作">Made with love and rainbows</p>
-</footer>
-
-<script>
-// ==================== 核心交互：滾動揭曉與背景切換 ====================
-const bgWelcomeLayer = document.getElementById('bg-welcome-layer');
-const bgSeasonLayer = document.getElementById('bg-season-layer');
-const topbar = document.getElementById('topbar');
-
-// 季節背景圖 URL (已更新為你提供的直接圖片鏈接)
-const seasonImages = {
-  // 注意：你未提供專門的秋天圖，這裡暫時复用開場圖，你可以替換成任何秋天圖片鏈接
-  autumn: 'https://i.pinimg.com/736x/c6/ea/64/c6ea64fb139b96700789c4c78dc30a6d.jpg', 
-  winter: 'https://i.pinimg.com/736x/14/bc/c9/14bcc9de52f766c7760138a27467aa10.jpg',
-  spring: 'https://i.pinimg.com/736x/12/ed/13/12ed13f7a07b5f66600940c163cfefb4.jpg',
-  summer: 'https://i.pinimg.com/736x/03/f1/83/03f1837e3a2ee873f28d4ad93296564c.jpg'
-};
-
-let currentSeasonBg = '';
-
-function handleScroll() {
-  const scrollY = window.scrollY;
-  const triggerDistance = 600;
-  const progress = Math.min(Math.max(scrollY / triggerDistance, 0), 1);
-
-  // 1. Welcome 背景層：變暗、縮小
-  bgWelcomeLayer.style.opacity = 1 - progress;
-  bgWelcomeLayer.style.transform = `scale(${1 + progress * 0.1})`;
   
-  // 2. 季節背景層：顯現
-  bgSeasonLayer.style.opacity = progress;
-  bgSeasonLayer.style.transform = `scale(${1 + progress * 0.1})`;
+  <!-- 社交图标保持不变 -->
+  <div class="social-row">
+    <a class="social-icon" href="#autumn" style="cursor: pointer; text-decoration: none;" title="Go to Autumn">👸</a>
+    <a class="social-icon" href="#winter" style="cursor: pointer; text-decoration: none;" title="Go to Winter">🥇</a>
+    <a class="social-icon" href="#spring" style="cursor: pointer; text-decoration: none;" title="Go to Spring">📚</a>
+    <a class="social-icon" href="#summer" style="cursor: pointer; text-decoration: none;" title="Go to Summer">💼</a>
+  </div>
+</div>
+        </div>
+      </div>
+    </section>
+    <!-- ==================== 冬天頁面 ==================== -->
+    <section id="winter">
+      <canvas class="bg-canvas" id="winterCanvas"></canvas>
+      <div id="snowman">⛄</div>
+      <div class="section-content">
+        <div>
+          <div class="winter-heading">
+            🏆 <span data-en="Awards" data-zh="比赛获奖" data-chs="比赛获奖">Awards</span>
+          </div>
+                  <div class="award-item">
+              <div class="trophy-icon">🏆</div>
+              <div class="award-info">
+                <h4 data-en="Top 10 Finalist" data-zh="十佳決賽入圍" data-chs="十佳决赛入围">Top 10 Finalist</h4>
+                <p data-en="CTF Life 'Financial Empowerment, Walk Together' Competition" data-zh="富通人壽「理財賦能．一起同行」比賽" data-chs="富通人寿「理财赋能．一起同行」比赛">CTF Life 'Financial Empowerment, Walk Together' Competition</p>
+              </div>
+            </div>
+            <div class="award-item">
+              <div class="trophy-icon">🌟</div>
+              <div class="award-info">
+                <h4 data-en="Most Promising Development Award" data-zh="最具潛力發展獎" data-chs="最具潜力发展奖">Most Promising Development Award</h4>
+                <p data-en="GBA Entrepreneurship Camp & Roadshow Competition" data-zh="大灣區創業營及路演比賽" data-chs="大湾区创业营及路演比赛">GBA Entrepreneurship Camp & Roadshow Competition</p>
+              </div>
+         </div>
+        <div>
+          <div class="winter-heading">
+            ⚡ <span data-en="Skills" data-zh="技能" data-chs="技能">Skills</span>
+          </div>
+          <div class="skills-grid">
+                        <span class="skill-badge">Premiere Pro</span>
+            <span class="skill-badge">CapCut</span>
+            <span class="skill-badge">Microsoft Office</span>
+            <span class="skill-badge">Photo Retouching</span>
+            <span class="skill-badge">Video Editing</span>
+            <span class="skill-badge">Event Planning</span>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  // 3. 導航欄變化
-  if (progress > 0.2) document.body.classList.add('scrolled');
-  else document.body.classList.remove('scrolled');
+    <!-- ==================== 春天頁面 ==================== -->
+    <section id="spring">
+      <canvas class="bg-canvas" id="springCanvas"></canvas>
+      <div class="section-content">
+        <div class="spring-heading" data-en="✦ Creations" data-zh="✦ 創作作品" data-chs="✦ 创作作品">
+          ✦ Creations
+        </div>
+        <div class="search-wrap">
+          <span class="search-icon"></span>
+          <input
+            type="text"
+            class="search-input"
+            id="searchInput"
+            placeholder="Search creations..."
+            oninput="filterProjects(this.value)"
+          />
+        </div>
+        <div class="carousel-wrap">
+          <div class="carousel-track" id="carouselTrack">
+            <div class="carousel-item">
+              <span></span>
+              <span
+                data-en="Art is the way I speak to the world"
+                data-zh="藝術是我與世界對話的方式"
+                data-chs="艺术是我与世界对话的方式"
+                >Art is the way I speak to the world</span
+              >
+            </div>
+            <div class="carousel-item">
+              <span>✨</span>
+              <span
+                data-en="Every creation comes from my heart"
+                data-zh="每一件創作都來自我的真心"
+                data-chs="每一件创作都来自我的真心"
+                >Every creation comes from my heart</span
+              >
+            </div>
+            <div class="carousel-item">
+              <span>🌸</span>
+              <span
+                data-en="Life is full of beauty and magic"
+                data-zh="生活充滿美麗與魔法"
+                data-chs="生活充满美丽与魔法"
+                >Life is full of beauty and magic</span
+              >
+            </div>
+          </div>
+          <button
+            class="carousel-btn prev ripple-container"
+            onclick="prevSlide(event)"
+          >
+            ‹
+          </button>
+          <button
+            class="carousel-btn next ripple-container"
+            onclick="nextSlide(event)"
+          >
+            ›
+          </button>
+        </div>
+  
+                        <div class="projects-grid" id="projectsGrid" style="grid-template-columns: repeat(1, 1fr);">
+          
+          <!-- 卡片 1：大型會議與活動攝影 -->
+          <a href="project1.html" class="glass project-card" style="text-decoration: none; color: inherit; background: linear-gradient(135deg, rgba(255, 255, 255, 0.65), rgba(255, 105, 120, 0.45));">
+            <div class="project-body" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center;">
+              <div class="project-title" 
+                   data-en="Official Event Photography" 
+                   data-zh="大型會議與活動攝影" 
+                   data-chs="大型会议与活动摄影"
+                   style="font-size: 1.6rem; margin-bottom: 8px; color: #dadada;">
+                📷大型會議與活動攝影
+              </div>
+              <div class="project-desc" 
+                   data-en="High-table dinners, handover ceremonies, and 100+ attendee conferences." 
+                   data-zh="高桌晚宴、交接儀式及逾百人研討會官方紀錄。" 
+                   data-chs="高桌晚宴、交接仪式及逾百人研讨会官方纪录。"
+                   style="color: #666; max-width: 90%;">
+                高桌晚宴、交接儀式及逾百人研討會官方紀錄。
+              </div>
+            </div>
+          </a>
 
-  requestAnimationFrame(() => {});
-}
+          <!-- 卡片 2：創意比賽作品與影片製作 -->
+          <a href="project2.html" class="glass project-card" style="text-decoration: none; color: inherit; background: linear-gradient(135deg, rgba(255, 151, 179, 0.65), rgba(138, 198, 255, 0.45));">
+            <div class="project-body" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center;">
+              <div class="project-title" 
+                   data-en="Creative Competition & Video Production" 
+                   data-zh="創意比賽作品與影片製作" 
+                   data-chs="创意比赛作品与影片制作"
+                   style="font-size: 1.6rem; margin-bottom: 8px; color: #4a4a4a;">
+                🎨創意比賽作品與影片製作
+              </div>
+              <div class="project-desc" 
+                   data-en="Game sketches, video editing using Premiere Pro & CapCut." 
+                   data-zh="遊戲概念草圖設計，以及 Premiere Pro 與 CapCut 影片剪輯。" 
+                   data-chs="游戏概念草图设计，以及 Premiere Pro 与 CapCut 影片剪辑。"
+                   style="color: #666; max-width: 90%;">
+                遊戲概念草圖設計，以及 Premiere Pro 與 CapCut 影片剪輯。
+              </div>
+            </div>
+          </a>
 
-window.addEventListener('scroll', () => requestAnimationFrame(handleScroll));
+          <!-- 卡片 3：校園活動宣傳海報設計 -->
+          <a href="project3.html" class="glass project-card" style="text-decoration: none; color: inherit; background: linear-gradient(135deg, rgba(255, 215, 158, 0.65), rgba(73, 194, 255, 0.45));">
+            <div class="project-body" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; text-align: center;">
+              <div class="project-title" 
+                   data-en="Campus Event Promotional Design" 
+                   data-zh="校園活動宣傳海報設計" 
+                   data-chs="校园活动宣传海报设计"
+                   style="font-size: 1.6rem; margin-bottom: 8px; color: #4a4a4a;">
+                🦭校園活動宣傳海報設計
+              </div>
+              <div class="project-desc" 
+                   data-en="Visual posters and promotional materials for university events." 
+                   data-zh="大學社團與官方活動宣傳海報與視覺物料設計。" 
+                   data-chs="大学社团与官方活动宣传海报与视觉物料设计。"
+                   style="color: #666; max-width: 90%;">
+                大學社團與官方活動宣傳海報與視覺物料設計。
+              </div>
+            </div>
+          </a>
 
-// 監聽頁面切換，改變背景圖
-const sections = ['autumn','winter','spring','summer'];
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      const season = e.target.id;
-      if (seasonImages[season] && currentSeasonBg !== seasonImages[season]) {
-        bgSeasonLayer.style.backgroundImage = `url('${seasonImages[season]}')`;
-        currentSeasonBg = seasonImages[season];
-      }
-    }
+        </div>
+       
+    </section>
+
+    <!-- ==================== 夏天頁面 ==================== -->
+    <section id="summer">
+      <canvas class="bg-canvas" id="summerCanvas"></canvas>
+      <div id="rainbow"></div>
+      <div class="section-content">
+        <div class="summer-heading" data-en="️ My Journey" data-zh="️ 我的歷程" data-chs="️ 我的历程">
+          ☀️ My Journey
+        </div>
+              <div class="timeline">
+          
+          <!-- 经历 1 -->
+          <div class="timeline-item">
+            <div class="glass tl-content">
+              <div class="tl-job" data-en="Student Helper" data-zh="學生助理" data-chs="学生助理">Student Helper</div>
+              <div class="tl-company">The Hang Seng University of Hong Kong</div>
+              <div class="tl-date">Jan 2026 – May 2026</div>
+              <div class="tl-desc" data-en="Global Affairs Office: Support international projects and assist in event coordination." data-zh="國際事務處：支援國際項目及協助活動統籌。" data-chs="国际事务处：支援国际项目及协助活动统筹。">
+                Global Affairs Office: Support international projects and assist in event coordination.
+              </div>
+            </div>
+            <div class="tl-dot"><div class="tl-dot-inner">🌏</div></div>
+            <div class="tl-empty"></div>
+          </div>
+
+          <!-- 经历 2 -->
+          <div class="timeline-item">
+            <div class="tl-empty"></div>
+            <div class="tl-dot"><div class="tl-dot-inner">🎢</div></div>
+            <div class="glass tl-content">
+              <div class="tl-job" data-en="Operational Ambassador Intern" data-zh="營運大使實習生" data-chs="运营大使实习生">Operational Ambassador Intern</div>
+              <div class="tl-company">Ocean Park Hong Kong</div>
+              <div class="tl-date">May – Sep 2025</div>
+              <div class="tl-desc" data-en="Delivered customer service for 50+ guests daily and managed crowd flow." data-zh="每日為 50 多位遊客提供客戶服務及人流管理。" data-chs="每日为 50 多位游客提供客户服务及人流管理。">
+                Delivered customer service for 50+ guests daily and managed crowd flow.
+              </div>
+            </div>
+          </div>
+
+          <!-- 经历 3 -->
+          <div class="timeline-item">
+            <div class="glass tl-content">
+              <div class="tl-job" data-en="GILT Student Research Assistant" data-zh="GILT 學生研究助理" data-chs="GILT 学生研究助理">GILT Student Research Assistant</div>
+              <div class="tl-company">The Hang Seng University of Hong Kong</div>
+              <div class="tl-date">Dec 2024 – Jan 2025</div>
+              <div class="tl-desc" data-en="Organized research data and provided logistical support for academic seminars." data-zh="整理研究數據並為學術研討會提供後勤支援。" data-chs="整理研究数据并为学术研讨会提供后勤支援。">
+                Organized research data and provided logistical support for academic seminars.
+              </div>
+            </div>
+            <div class="tl-dot"><div class="tl-dot-inner">📚</div></div>
+            <div class="tl-empty"></div>
+          </div>
+
+          <!-- 经历 4 -->
+          <div class="timeline-item">
+            <div class="tl-empty"></div>
+            <div class="tl-dot"><div class="tl-dot-inner">🎬</div></div>
+            <div class="glass tl-content">
+              <div class="tl-job" data-en="Video Editing Assistant Intern" data-zh="影片剪輯助理實習生" data-chs="影片剪辑助理实习生">Video Editing Assistant Intern</div>
+              <div class="tl-company">Sina Operation Center</div>
+              <div class="tl-date">Aug 2024</div>
+              <div class="tl-desc" data-en="Edited short videos using Premiere Pro and captured behind-the-scenes footage." data-zh="使用 Premiere Pro 剪輯短片並拍攝花絮。" data-chs="使用 Premiere Pro 剪辑短片并拍摄花絮。">
+                Edited short videos using Premiere Pro and captured behind-the-scenes footage.
+              </div>
+            </div>
+          </div>
+
+          <!-- 经历 5 -->
+          <div class="timeline-item">
+            <div class="glass tl-content">
+              <div class="tl-job" data-en="Accounting Assistant" data-zh="會計助理" data-chs="会计助理">Accounting Assistant</div>
+              <div class="tl-company">Finance Office, HSUHK</div>
+              <div class="tl-date">Apr – Nov 2024</div>
+              <div class="tl-desc" data-en="Processed invoices and assisted with month-end closing procedures." data-zh="處理發票及協助月結程序。" data-chs="处理发票及协助月结程序。">
+                Processed invoices and assisted with month-end closing procedures.
+              </div>
+            </div>
+            <div class="tl-dot"><div class="tl-dot-inner">📊</div></div>
+            <div class="tl-empty"></div>
+          </div>
+
+        </div>
+    </section>
+
+    <!-- ==================== 頁尾 ==================== -->
+    <footer id="footer">
+      <p
+        data-en="© 2025 Reina · Colorful Seasonal World"
+        data-zh="© 2025 Reina的四季"
+        data-chs="© 2025 Reina的小小世界"
+      >
+        © 2025 Reina · Colorful Seasonal World
+      </p>
+      <p data-en="Feel free to know more about me" data-zh="主動來了解我吧！" data-chs="欢迎下次再见面～">
+        Feel free to know more about me
+      </p>
+    </footer>
+    <script>
+      // ==================== 核心交互：滾動揭曉與背景切換 ====================
+      const bgWelcomeLayer = document.getElementById("bg-welcome-layer");
+      const bgSeasonLayer = document.getElementById("bg-season-layer");
+      const topbar = document.getElementById("topbar");
+
+      // 季節背景圖 URL (已更新為你提供的直接圖片鏈接)
+      const seasonImages = {
+        // 注意：你未提供專門的秋天圖，這裡暫時复用開場圖，你可以替換成任何秋天圖片鏈接
+        autumn:
+          "https://i.pinimg.com/736x/c6/ea/64/c6ea64fb139b96700789c4c78dc30a6d.jpg",
+        winter:
+          "https://i.pinimg.com/736x/14/bc/c9/14bcc9de52f766c7760138a27467aa10.jpg",
+        spring:
+          "https://i.pinimg.com/736x/12/ed/13/12ed13f7a07b5f66600940c163cfefb4.jpg",
+        summer:
+          "https://i.pinimg.com/736x/03/f1/83/03f1837e3a2ee873f28d4ad93296564c.jpg",
+      };
+      function playSeasonVideo(season) {
+  const allVideos = document.querySelectorAll('.season-video');
+  let targetVideo = document.getElementById(`video-${season}`);
+
+  allVideos.forEach(v => {
+    v.pause();
+    v.classList.remove('active');
   });
-}, { threshold: 0.5 });
-sections.forEach(s => {
-  const el = document.getElementById(s);
-  if (el) observer.observe(el);
-});
 
-// ==================== 原有功能代碼 ====================
-
-function enterWebsite() {
-  document.getElementById('welcome').classList.add('hidden');
-  handleScroll();
+  if (targetVideo) {
+    targetVideo.classList.add('active');
+    targetVideo.currentTime = 0;  // 回到开头
+    targetVideo.play().catch(err => {}); // 强制播放
+  }
 }
 
-let currentLang = 'en';
+      let currentSeasonBg = "";
+
+      function handleScroll() {
+        const scrollY = window.scrollY;
+        const triggerDistance = 600;
+        const progress = Math.min(Math.max(scrollY / triggerDistance, 0), 1);
+
+        // 1. Welcome 背景層：變暗、縮小
+        bgWelcomeLayer.style.opacity = 1 - progress;
+        bgWelcomeLayer.style.transform = `scale(${1 + progress * 0.1})`;
+        // 3. 導航欄變化
+        if (progress > 0.2) document.body.classList.add("scrolled");
+        else document.body.classList.remove("scrolled");
+
+        requestAnimationFrame(() => {});
+      }
+
+      window.addEventListener("scroll", () =>
+        requestAnimationFrame(handleScroll)
+      );
+
+      // 監聽頁面切換，改變背景圖
+      const sections = ["autumn", "winter", "spring", "summer"];
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              const season = e.target.id;
+              if (
+                seasonImages[season] &&
+                currentSeasonBg !== seasonImages[season]
+              ) {
+               playSeasonVideo(season);
+                currentSeasonBg = seasonImages[season];
+              }
+            }
+          });
+        },
+        { threshold: 0.5 }
+      );
+      sections.forEach((s) => {
+        const el = document.getElementById(s);
+        if (el) observer.observe(el);
+      });
+  
+
+      // ==================== 原有功能代碼 ====================
+
+      function enterWebsite() {
+        document.getElementById("welcome").classList.add("hidden");
+        handleScroll();
+      }
+
+      // 三种语言循环：英文 → 繁体 → 简体
+let currentLang = "en";
 function toggleLang(e) {
   addRipple(e);
-  currentLang = currentLang === 'en' ? 'zh' : 'en';
-  document.querySelectorAll('[data-en]').forEach(el => {
-    el.textContent = el.getAttribute('data-' + currentLang);
-  });
-  document.getElementById('langBtn').textContent = currentLang === 'en' ? 'EN / 中文' : '中文 / EN';
-  document.getElementById('searchInput').placeholder = currentLang === 'en' ? 'Search creations...' : '搜尋創作...';
-  filterProjects(document.getElementById('searchInput').value);
-}
-
-function toggleDropdown(e) {
-  addRipple(e);
-  document.getElementById('dropdownMenu').classList.toggle('open');
-}
-function closeDropdown() {
-  document.getElementById('dropdownMenu').classList.remove('open');
-}
-document.addEventListener('click', e => {
-  if (!e.target.closest('.dropdown-wrap')) closeDropdown();
-});
-
-function addRipple(e) {
-  const btn = e.currentTarget;
-  const r = document.createElement('span');
-  r.className = 'ripple';
-  const rect = btn.getBoundingClientRect();
-  const size = Math.max(rect.width, rect.height);
-  r.style.width = r.style.height = size + 'px';
-  r.style.left = (e.clientX - rect.left - size/2) + 'px';
-  r.style.top  = (e.clientY - rect.top  - size/2) + 'px';
-  btn.appendChild(r);
-  r.addEventListener('animationend', () => r.remove());
-}
-document.querySelectorAll('.ripple-container').forEach(el => {
-  el.addEventListener('click', addRipple);
-});
-
-const cursorEl = document.getElementById('cursor-follower');
-const cursorIcons = { autumn: '🍂', winter: '❄️', spring: '', summer: '☀️' };
-let mx = 0, my = 0, cx = 0, cy = 0;
-let currentSection = 'autumn';
-
-document.addEventListener('mousemove', e => {
-  mx = e.clientX; my = e.clientY;
-});
-
-function animCursor() {
-  cx += (mx - cx) * 0.18;
-  cy += (my - cy) * 0.18;
-  cursorEl.style.left = cx + 'px';
-  cursorEl.style.top  = cy + 'px';
-  requestAnimationFrame(animCursor);
-}
-animCursor();
-
-const sectionObserver = new IntersectionObserver(entries => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      currentSection = e.target.id;
-      cursorEl.textContent = cursorIcons[currentSection] || '✦';
-    }
-  });
-}, { threshold: 0.5 });
-sections.forEach(s => {
-  const el = document.getElementById(s);
-  if (el) sectionObserver.observe(el);
-});
-
-function filterProjects(query) {
-  const q = query.trim().toLowerCase();
-  document.querySelectorAll('.project-card').forEach(card => {
-    const titleEn = (card.getAttribute('data-title-en') || '').toLowerCase();
-    const titleZh = (card.getAttribute('data-title-zh') || '').toLowerCase();
-    const descEl = card.querySelector('.project-desc');
-    const desc = descEl ? descEl.textContent.toLowerCase() : '';
-    const match = !q || titleEn.includes(q) || titleZh.includes(q) || desc.includes(q);
-    card.classList.toggle('hidden', !match);
-  });
-}
-
-let slide = 0;
-const totalSlides = 3;
-function updateCarousel() {
-  document.getElementById('carouselTrack').style.transform = `translateX(-${slide * 100}%)`;
-}
-function prevSlide(e) {
-  addRipple(e);
-  slide = (slide - 1 + totalSlides) % totalSlides;
-  updateCarousel();
-}
-function nextSlide(e) {
-  addRipple(e);
-  slide = (slide + 1) % totalSlides;
-  updateCarousel();
-}
-setInterval(() => { slide = (slide + 1) % totalSlides; updateCarousel(); }, 4000);
-
-const snowman = document.getElementById('snowman');
-let snowmanTargetAngle = 0;
-let snowmanCurrentAngle = 0;
-function updateSnowman() {
-  const rect = snowman.getBoundingClientRect();
-  const cx = rect.left + rect.width / 2;
-  const cy = rect.top + rect.height / 2;
-  const dx = mx - cx;
-  const dy = my - cy;
-  const angle = Math.atan2(dy, dx);
-  snowmanTargetAngle = angle * 25;
-  snowmanCurrentAngle += (snowmanTargetAngle - snowmanCurrentAngle) * 0.08;
-  snowman.style.transform = `rotate(${snowmanCurrentAngle}deg)`;
-  requestAnimationFrame(updateSnowman);
-}
-updateSnowman();
-setInterval(() => {
-  snowman.style.animation = 'snowmanBlink 1.2s ease-in-out';
-  setTimeout(() => snowman.style.animation = '', 1200);
-}, 4000 + Math.random() * 3000);
-
-// ==================== Canvas 動畫 (修復版) ====================
-
-// 秋天：落葉
-(function() {
-  const canvas = document.getElementById('autumnCanvas');
-  const ctx = canvas.getContext('2d');
-  let W, H, leaves = [];
-  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
-  window.addEventListener('resize', resize); resize();
   
-  const colors = ['#ffbc3d','#ff7a1f','#e85d10','#ffd54f','#a8501c','#ff6b35'];
-  for (let i = 0; i < 120; i++) {
-    leaves.push({
-      x: Math.random() * W,
-      y: Math.random() * -H,
-      r: 7 + Math.random() * 16,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      speed: 1 + Math.random() * 2,
-      drift: (Math.random() - 0.5) * 1.2,
-      rot: Math.random() * Math.PI * 2,
-      rotSpeed: (Math.random() - 0.5) * 0.08,
-      opacity: 0.6 + Math.random() * 0.4,
-    });
-  }
+  // 循环切换：en → zh → chs → en
+  if (currentLang === "en") currentLang = "zh";
+  else if (currentLang === "zh") currentLang = "chs";
+  else currentLang = "en";
 
-  function loop() {
-    ctx.clearRect(0, 0, W, H);
-    leaves.forEach(l => {
-      l.y += l.speed;
-      l.x += l.drift + Math.sin(l.y * 0.02) * 1;
-      l.rot += l.rotSpeed;
-      if (l.y > H + 30) { l.y = -30; l.x = Math.random() * W; }
-      ctx.save();
-      ctx.translate(l.x, l.y);
-      ctx.rotate(l.rot);
-      ctx.globalAlpha = l.opacity;
-      ctx.fillStyle = l.color;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, l.r, l.r * 0.6, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    });
-    requestAnimationFrame(loop);
-  }
-  loop();
-})();
+  // 更新所有文字
+  document.querySelectorAll("[data-en]").forEach((el) => {
+    el.textContent = el.getAttribute("data-" + currentLang);
+  });
 
-// 冬天：下雪
-(function() {
-  const canvas = document.getElementById('winterCanvas');
-  const ctx = canvas.getContext('2d');
-  let W, H, flakes = [];
-  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
-  window.addEventListener('resize', resize); resize();
-  for (let i = 0; i < 180; i++) {
-    flakes.push({
-      x: Math.random() * W,
-      y: Math.random() * H,
-      r: 1.2 + Math.random() * 4,
-      speed: 0.6 + Math.random() * 1.8,
-      drift: (Math.random() - 0.5) * 0.8,
-      opacity: 0.4 + Math.random() * 0.6,
-    });
-  }
-  function loop() {
-    ctx.clearRect(0, 0, W, H);
-    flakes.forEach(f => {
-      f.y += f.speed;
-      f.x += f.drift;
-      if (f.y > H + 10) { f.y = -10; f.x = Math.random() * W; }
-      ctx.beginPath();
-      ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(220,240,255,${f.opacity})`;
-      ctx.fill();
-    });
-    requestAnimationFrame(loop);
-  }
-  loop();
-})();
+  // 更新按钮文字
+  const btnTexts = { en: "繁", zh: "简", chs: "EN" };
+  document.getElementById("langBtn").textContent = btnTexts[currentLang];
 
-// 春天：花瓣
-(function() {
-  const canvas = document.getElementById('springCanvas');
-  const ctx = canvas.getContext('2d');
-  let W, H, petals = [];
-  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
-  window.addEventListener('resize', resize); resize();
-  
-  const pinks = ['#ffb6d4','#ffc8dc','#fad8e2','#ffa8c7'];
-  for (let i = 0; i < 70; i++) {
-    petals.push({
-      x: Math.random() * W,
-      y: Math.random() * -H,
-      r: 4 + Math.random() * 9,
-      color: pinks[Math.floor(Math.random() * pinks.length)],
-      speed: 0.6 + Math.random() * 1.1,
-      drift: (Math.random() - 0.5) * 1,
-      rot: Math.random() * Math.PI * 2,
-      opacity: 0.5 + Math.random() * 0.5,
-    });
-  }
+  // 更新搜索框提示文字
+  const placeholders = {
+    en: "Search creations...",
+    zh: "搜尋創作...",
+    chs: "搜索作品..."
+  };
+  document.getElementById("searchInput").placeholder = placeholders[currentLang];
 
-  function loop() {
-    ctx.clearRect(0,0,W,H);
-    petals.forEach(p => {
-      p.y += p.speed;
-      p.x += p.drift + Math.sin(p.y * 0.03) * 1;
-      if (p.y > H + 20) { p.y = -20; p.x = Math.random() * W; }
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.rot);
-      ctx.globalAlpha = p.opacity;
-      ctx.fillStyle = p.color;
-      ctx.beginPath();
-      ctx.ellipse(0,0,p.r, p.r*0.6, 0,0,Math.PI*2);
-      ctx.fill();
-      ctx.restore();
-    });
-    requestAnimationFrame(loop);
-  }
-  loop();
-})();
+  filterProjects(document.getElementById("searchInput").value);
+}
 
-// 夏天：空動畫
-(function() {
-  const canvas = document.getElementById('summerCanvas');
-  const ctx = canvas.getContext('2d');
-  let W, H;
-  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
-  window.addEventListener('resize', resize); resize();
-  function loop() { ctx.clearRect(0,0,W,H); requestAnimationFrame(loop); }
-  loop();
-})();
+      function toggleDropdown(e) {
+        addRipple(e);
+        document.getElementById("dropdownMenu").classList.toggle("open");
+      }
+      function closeDropdown() {
+        document.getElementById("dropdownMenu").classList.remove("open");
+      }
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest(".dropdown-wrap")) closeDropdown();
+      });
 
-document.querySelectorAll('a[href^="#"]').forEach(a => {
-  a.addEventListener('click', e => {
+      function addRipple(e) {
+        const btn = e.currentTarget;
+        const r = document.createElement("span");
+        r.className = "ripple";
+        const rect = btn.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        r.style.width = r.style.height = size + "px";
+        r.style.left = e.clientX - rect.left - size / 2 + "px";
+        r.style.top = e.clientY - rect.top - size / 2 + "px";
+        btn.appendChild(r);
+        r.addEventListener("animationend", () => r.remove());
+      }
+      document.querySelectorAll(".ripple-container").forEach((el) => {
+        el.addEventListener("click", addRipple);
+      });
+
+      const cursorEl = document.getElementById("cursor-follower");
+      const cursorIcons = {
+        autumn: "🍂",
+        winter: "❄️",
+        spring: "💗",
+        summer: "☀️",
+      };
+      let mx = 0,
+        my = 0,
+        cx = 0,
+        cy = 0;
+      let currentSection = "autumn";
+
+      document.addEventListener("mousemove", (e) => {
+        mx = e.clientX;
+        my = e.clientY;
+      });
+
+      function animCursor() {
+        cx += (mx - cx) * 0.18;
+        cy += (my - cy) * 0.18;
+        cursorEl.style.left = cx + "px";
+        cursorEl.style.top = cy + "px";
+        requestAnimationFrame(animCursor);
+      }
+      animCursor();
+
+      const sectionObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              currentSection = e.target.id;
+              cursorEl.textContent = cursorIcons[currentSection] || "✦";
+            }
+          });
+        },
+        { threshold: 0.5 }
+      );
+      sections.forEach((s) => {
+        const el = document.getElementById(s);
+        if (el) sectionObserver.observe(el);
+      });
+
+      function filterProjects(query) {
+        const q = query.trim().toLowerCase();
+        document.querySelectorAll(".project-card").forEach((card) => {
+          const titleEn = (
+            card.getAttribute("data-title-en") || ""
+          ).toLowerCase();
+          const titleZh = (
+            card.getAttribute("data-title-zh") || ""
+          ).toLowerCase();
+          const descEl = card.querySelector(".project-desc");
+          const desc = descEl ? descEl.textContent.toLowerCase() : "";
+          const match =
+            !q ||
+            titleEn.includes(q) ||
+            titleZh.includes(q) ||
+            desc.includes(q);
+          card.classList.toggle("hidden", !match);
+        });
+      }
+
+      let slide = 0;
+      const totalSlides = 3;
+      function updateCarousel() {
+        document.getElementById(
+          "carouselTrack"
+        ).style.transform = `translateX(-${slide * 100}%)`;
+      }
+      function prevSlide(e) {
+        addRipple(e);
+        slide = (slide - 1 + totalSlides) % totalSlides;
+        updateCarousel();
+      }
+      function nextSlide(e) {
+        addRipple(e);
+        slide = (slide + 1) % totalSlides;
+        updateCarousel();
+      }
+      setInterval(() => {
+        slide = (slide + 1) % totalSlides;
+        updateCarousel();
+      }, 4000);
+
+      const snowman = document.getElementById("snowman");
+      let snowmanTargetAngle = 0;
+      let snowmanCurrentAngle = 0;
+      function updateSnowman() {
+        const rect = snowman.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dx = mx - cx;
+        const dy = my - cy;
+        const angle = Math.atan2(dy, dx);
+        snowmanTargetAngle = angle * 25;
+        snowmanCurrentAngle +=
+          (snowmanTargetAngle - snowmanCurrentAngle) * 0.08;
+        snowman.style.transform = `rotate(${snowmanCurrentAngle}deg)`;
+        requestAnimationFrame(updateSnowman);
+      }
+      updateSnowman();
+      setInterval(() => {
+        snowman.style.animation = "snowmanBlink 1.2s ease-in-out";
+        setTimeout(() => (snowman.style.animation = ""), 1200);
+      }, 4000 + Math.random() * 3000);
+
+      // ==================== Canvas 動畫 (修復版) ====================
+
+      // 秋天：落葉
+      (function () {
+        const canvas = document.getElementById("autumnCanvas");
+        const ctx = canvas.getContext("2d");
+        let W,
+          H,
+          leaves = [];
+        function resize() {
+          W = canvas.width = window.innerWidth;
+          H = canvas.height = window.innerHeight;
+        }
+        window.addEventListener("resize", resize);
+        resize();
+
+        const colors = [
+          "#ffbc3d",
+          "#ff7a1f",
+          "#e85d10",
+          "#ffd54f",
+          "#a8501c",
+          "#ff6b35",
+        ];
+        for (let i = 0; i < 120; i++) {
+          leaves.push({
+            x: Math.random() * W,
+            y: Math.random() * -H,
+            r: 7 + Math.random() * 16,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            speed: 1 + Math.random() * 2,
+            drift: (Math.random() - 0.5) * 1.2,
+            rot: Math.random() * Math.PI * 2,
+            rotSpeed: (Math.random() - 0.5) * 0.08,
+            opacity: 0.6 + Math.random() * 0.4,
+          });
+        }
+
+        function loop() {
+          ctx.clearRect(0, 0, W, H);
+          leaves.forEach((l) => {
+            l.y += l.speed;
+            l.x += l.drift + Math.sin(l.y * 0.02) * 1;
+            l.rot += l.rotSpeed;
+            if (l.y > H + 30) {
+              l.y = -30;
+              l.x = Math.random() * W;
+            }
+            ctx.save();
+            ctx.translate(l.x, l.y);
+            ctx.rotate(l.rot);
+            ctx.globalAlpha = l.opacity;
+            ctx.fillStyle = l.color;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, l.r, l.r * 0.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          });
+          requestAnimationFrame(loop);
+        }
+        loop();
+      })();
+
+      // 冬天：下雪
+      (function () {
+        const canvas = document.getElementById("winterCanvas");
+        const ctx = canvas.getContext("2d");
+        let W,
+          H,
+          flakes = [];
+        function resize() {
+          W = canvas.width = window.innerWidth;
+          H = canvas.height = window.innerHeight;
+        }
+        window.addEventListener("resize", resize);
+        resize();
+        for (let i = 0; i < 180; i++) {
+          flakes.push({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            r: 1.2 + Math.random() * 4,
+            speed: 0.6 + Math.random() * 1.8,
+            drift: (Math.random() - 0.5) * 0.8,
+            opacity: 0.4 + Math.random() * 0.6,
+          });
+        }
+        function loop() {
+          ctx.clearRect(0, 0, W, H);
+          flakes.forEach((f) => {
+            f.y += f.speed;
+            f.x += f.drift;
+            if (f.y > H + 10) {
+              f.y = -10;
+              f.x = Math.random() * W;
+            }
+            ctx.beginPath();
+            ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(220,240,255,${f.opacity})`;
+            ctx.fill();
+          });
+          requestAnimationFrame(loop);
+        }
+        loop();
+      })();
+
+      // 春天：花瓣
+      (function () {
+        const canvas = document.getElementById("springCanvas");
+        const ctx = canvas.getContext("2d");
+        let W,
+          H,
+          petals = [];
+        function resize() {
+          W = canvas.width = window.innerWidth;
+          H = canvas.height = window.innerHeight;
+        }
+        window.addEventListener("resize", resize);
+        resize();
+
+        const pinks = ["#ffb6d4", "#ffc8dc", "#fad8e2", "#ffa8c7"];
+        for (let i = 0; i < 70; i++) {
+          petals.push({
+            x: Math.random() * W,
+            y: Math.random() * -H,
+            r: 4 + Math.random() * 9,
+            color: pinks[Math.floor(Math.random() * pinks.length)],
+            speed: 0.6 + Math.random() * 1.1,
+            drift: (Math.random() - 0.5) * 1,
+            rot: Math.random() * Math.PI * 2,
+            opacity: 0.5 + Math.random() * 0.5,
+          });
+        }
+
+        function loop() {
+          ctx.clearRect(0, 0, W, H);
+          petals.forEach((p) => {
+            p.y += p.speed;
+            p.x += p.drift + Math.sin(p.y * 0.03) * 1;
+            if (p.y > H + 20) {
+              p.y = -20;
+              p.x = Math.random() * W;
+            }
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot);
+            ctx.globalAlpha = p.opacity;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, p.r, p.r * 0.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          });
+          requestAnimationFrame(loop);
+        }
+        loop();
+      })();
+
+      // 夏天：空動畫
+      (function () {
+        const canvas = document.getElementById("summerCanvas");
+        const ctx = canvas.getContext("2d");
+        let W, H;
+        function resize() {
+          W = canvas.width = window.innerWidth;
+          H = canvas.height = window.innerHeight;
+        }
+        window.addEventListener("resize", resize);
+        resize();
+        function loop() {
+          ctx.clearRect(0, 0, W, H);
+          requestAnimationFrame(loop);
+        }
+        loop();
+      })();
+
+// 卡片点击展开/收起
+function toggleCardDetail(el) {
+  document.querySelectorAll('.card-expanded').forEach(item=>{
+    item.classList.remove('card-expanded')
+  })
+  el.classList.toggle('card-expanded');
+}
+// 锚点平滑滚动 只保留这一段，多余重复的全部删掉
+document.querySelectorAll('a[href^="#"]').forEach((a) => {
+  a.addEventListener("click", (e) => {
     e.preventDefault();
-    const t = document.querySelector(a.getAttribute('href'));
-    if (t) t.scrollIntoView({ behavior: 'smooth' });
+    const t = document.querySelector(a.getAttribute("href"));
+    if (t) t.scrollIntoView({ behavior: "smooth" });
   });
 });
-</script>
+      
+// 控制右侧卡片的展开/关闭
+function toggleDetails(btnElement) {
+  const content = btnElement.nextElementSibling; // 获取按钮后面的 div
+  const textSpan = btnElement.querySelector('.btn-text');
+  
+  // 切换显示/隐藏
+  if (content.classList.contains('show')) {
+    content.classList.remove('show');
+    textSpan.textContent = textSpan.getAttribute('data-en'); // 恢复为 "See Details"
+  } else {
+    content.classList.add('show');
+    textSpan.textContent = textSpan.getAttribute('data-en').replace('▼', '▲').replace('See My Details', 'Close'); 
+    // 或者简单切换文字： textSpan.textContent = "Close ▲";
+  }
+}
 
-
-                <script></script>
-            
-        
-    </body>
+    </script>
+  </body>
+</html>
