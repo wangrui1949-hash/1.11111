@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reina's world</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* 全局设置 */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        /* 黑色遮罩层 */
+        #black-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            z-index: 9999;
+            transition: opacity 1.2s ease-out;
+            pointer-events: none;
+        }
+
+        /* 主背景容器 */
+        .main-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background-image: url('https://i.pinimg.com/1200x/33/68/3e/33683e59c765e20dd8f4478d04e244c1.jpg');
+            background-size: cover;
+            background-position: center;
+            filter: blur(15px) brightness(0.7); 
+            transform: scale(1.1);
+            transition: filter 0.5s;
+        }
+
+        .content-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .call-interface {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+            width: 100%;
+            padding: 60px 0;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 1s ease-out 0.3s;
+        }
+
+        .call-interface.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+      .caller-subtitle {
+    font-size: 15px;
+    /* 渐变颜色代码 👇 */
+    background: linear-gradient(to right, #9b7575, #ffffff, #ffb246);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-top: 6px;
+    font-weight: 500;
+}
+        .avatar-wrapper {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            border-radius: 40px;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            border: 4px solid rgba(255,255,255,0.1);
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        @keyframes ring {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(6deg); }
+            50% { transform: rotate(0deg); }
+            75% { transform: rotate(-6deg); }
+            100% { transform: rotate(0deg); }
+        }
+        .ringing {
+            animation: ring 0.6s ease-in-out infinite;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        /* 顶部控制栏 → 移到左边 */
+        .top-controls {
+            position: absolute;
+            top: 40px;
+            left: 40px;
+            display: flex;
+            gap: 15px;
+            z-index: 50;
+        }
+
+        .control-btn {
+            padding: 10px 20px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+
+        .control-btn.active {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* 底部按钮 */
+        .controls {
+            display: flex;
+            gap: 80px;
+            margin-bottom: 40px;
+        }
+
+        .btn-circle {
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            position: relative;
+        }
+
+        .btn-circle:hover {
+            transform: scale(1.15) translateY(-5px);
+        }
+
+        .btn-hangup { background: linear-gradient(135deg, #ff6b6b, #ee5253); }
+        .btn-answer { background: linear-gradient(135deg, #2ecc71, #27ae60); }
+
+        .btn-label {
+            position: absolute;
+            bottom: -30px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.9);
+            font-weight: 500;
+            white-space: nowrap;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* 右侧聊天记录侧边栏 */
+        .chat-sidebar {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 380px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(255,255,255,0.5);
+            display: flex;
+            flex-direction: column;
+            padding: 30px;
+            box-sizing: border-box;
+            z-index: 40;
+            transform: translateX(100%); 
+            transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+            box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+        }
+
+        .chat-sidebar.show {
+            transform: translateX(0);
+        }
+
+        .chat-header {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-content {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding-right: 5px;
+        }
+
+        .chat-content::-webkit-scrollbar { width: 6px; }
+        .chat-content::-webkit-scrollbar-thumb { background-color: rgba(0,0,0,0.1); border-radius: 10px; }
+
+  .msg {
+  /* 你原来的样式保留不变 */
+  max-width: 85%;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.5;
+  animation: slideUp 0.4s ease-out;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  cursor: pointer;
+
+  /* 👇 新增 hover 效果 */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.msg:hover {
+  transform: scale(1.05); /* 放大 5%，很柔和 */
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1); /* 同时加一点阴影，更有层次感 */
+}
+
+        .msg-received {
+            background: white;
+            color: #333;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            border: 1px solid #eee;
+        }
+
+        .msg-sent {
+            background: #333;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .caller-info {
+            text-align: center;
+            color: white;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            margin-top: 30px;
+        }
+        .caller-name {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+        .call-timer {
+            font-size: 16px;
+            opacity: 0.8;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .call-active .avatar-wrapper { transform: scale(1.1); border-color: rgba(255,255,255,0.3); }
+        .call-active .ringing { animation: none; }
+        .call-active .call-timer { opacity: 1; }
+
+        /* 语言切换动画 */
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .msg-desc {
+    font-size: 12px;
+    color: #888;
+    display:block;
+    margin-top:4px;
+}
+    </style>
+</head>
+<body>
+
+    <div id="black-overlay"></div>
+    <div class="main-container"></div>
+
+    <div class="content-layer">
+        
+        <!-- 顶部控制栏：字幕 + 语言切换 → 已放左边 -->
+        <div class="top-controls">
+            <div class="control-btn glass-panel" id="langBtn" onclick="toggleLanguage()">
+                <i class="fa-solid fa-globe"></i>
+                <span id="langText">EN</span>
+            </div>
+            <div class="control-btn glass-panel" id="subtitleBtn" onclick="toggleChat()">
+                <i class="fa-regular fa-closed-captioning"></i>
+                <span id="subtitleText">時空機</span>
+            </div>
+        </div>
+
+        <!-- 通话界面 -->
+        <div class="call-interface" id="callInterface">
+            <div class="flex flex-col items-center w-full">
+                <div class="avatar-wrapper" id="avatarWrapper">
+                    <img src="./img/myself.jpg" alt="Avatar" class="avatar-img">
+                </div>
+
+<div class="caller-info">
+    <div class="caller-name" data-i18n="name">歡迎來到 Reina 的小小世界</div>
+    <div class="caller-subtitle" data-i18n="subtitle"></div>  <!-- 加这行 -->
+    <div class="call-timer" id="timer">00:00</div>
+</div>
+            </div>
+
+            <div class="controls">
+                <div class="relative group">
+                    <div class="btn-circle btn-hangup" onclick="hangUp()">
+                        <i class="fa-solid fa-phone-slash"></i>
+                    </div>
+                    <span class="btn-label" data-i18n="hangup">掛斷</span>
+                </div>
+
+                <div class="relative group">
+                    <div class="btn-circle btn-answer" onclick="answerCall()">
+                        <i class="fa-solid fa-phone"></i>
+                    </div>
+                    <span class="btn-label" data-i18n="answer">接聽</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧聊天记录侧边栏 → 现在是目录 -->
+        <div class="chat-sidebar" id="chatSidebar">
+            <div class="chat-header">
+                <span data-i18n="chatTitle">目錄 / Menu</span>
+                <i class="fa-solid fa-xmark cursor-pointer hover:text-red-500" onclick="toggleChat()"></i>
+            </div>
+            
+            <div class="chat-content" id="chatHistory">
+                <!-- 目錄會在這裡 -->
+            </div>
+            
+<div class="mt-4 pt-4 border-t border-gray-300">
+  <div id="aiChatMessages" class="max-h-32 overflow-y-auto mb-2 space-y-1 text-sm"></div>
+  
+  <div class="bg-white/50 rounded-lg p-3 flex items-center gap-2">
+    <i class="fa-solid fa-microphone text-gray-500"></i>
+    <input
+      id="userInput"
+      type="text"
+      class="flex-1 bg-transparent border-none outline-none text-sm text-gray-700 placeholder-gray-400"
+      placeholder="點擊進入即刻穿越"
+      data-zh="點擊進入即刻穿越"
+      data-chs="点击进入即刻穿越"
+      data-en="Click to visit season pages"
+    />
+    <button 
+      id="sendBtn"
+      onclick="sendMessage()" 
+      class="bg-blue-500 text-white px-3 py-1 rounded-full text-xs hover:bg-blue-600 transition"
+      data-zh="發送"
+      data-chs="发送"
+      data-en="Send"
+    >
+      發送
+    </button>
+  </div>
+</div>
+
+    </div>
+
+    <script>
+  const API_KEY = "你的 DeepSeek API Key";
+const API_URL = "https://api.deepseek.com/v1/chat/completions";
+
+// 发送消息给 DeepSeek
+async function sendToAI(message) {
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [{ role: "user", content: message }],
+        temperature: 0.7
+      })
+    });
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content || "AI 暂时无法回复";
+  } catch (err) {
+    console.error(err);
+    return "嘻嘻，API太贵了，Reina还在攒钱中...注意⚠️：点击上面按钮，即可穿越时空噢！！快来体验吧～";
+  }
+}
+
+// 发送消息的主函数
+async function sendMessage() {
+  const input = document.getElementById("userInput");
+  const text = input.value.trim();
+  if (!text) return;
+
+  // 显示用户消息
+  addMessage(text, "user");
+  input.value = "";
+
+  // 显示“正在思考”状态
+  addMessage("正在思考...", "bot");
+
+  // 调用 AI 并替换状态消息
+  const reply = await sendToAI(text);
+  const messages = document.querySelectorAll("#aiChatMessages > div");
+  messages[messages.length - 1].remove();
+
+  // 显示 AI 回复
+  addMessage(reply, "bot");
+}
+
+// 把消息添加到界面
+function addMessage(text, type) {
+  const container = document.getElementById("aiChatMessages");
+  const div = document.createElement("div");
+  div.className = `p-2 rounded-lg max-w-[80%] text-sm ${
+    type === "user" 
+      ? "bg-blue-100 text-blue-900 ml-auto text-right" 
+      : "bg-gray-100 text-gray-800 mr-auto"
+  }`;
+  div.textContent = text;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+// 按回车发送消息
+document.addEventListener("DOMContentLoaded", () => {
+  const input = document.getElementById("userInput");
+  if (input) {
+    input.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+  }
+});
+        // --- 1. 多语言：繁体 + 簡體 + 英文 ---
+        const i18n = {
+            zh: {
+                name: "歡迎來到 Reina 的小小世界",
+                  subtitle: "一名時空旅者的來電👋",
+                hangup: "掛斷",
+                answer: "接聽",
+                subtitleOn: "時空機",
+                subtitleOff: "關閉",
+                chatTitle: "時空機/Time Machine",
+                liveTranscription: "點擊進入即刻穿越",
+                  aiPlaceholder: "點擊上面按鈕即刻穿越",   // 繁体
+                tooltip: "準備好穿越時空了嗎!",
+                langBtn: "简",
+                chats: [
+                    { type: 'received', text: "🌸 春天", desc: "作品集展示📖", link: "index.html#spring" },
+                    { type: 'received', text: "☀️ 夏天", desc: "工作經歷📚", link: "index.html#summer" },
+                    { type: 'received', text: "🍂 秋天", desc: "個人主頁👋", link: "index.html#autumn" },
+                    { type: 'received', text: "❄️ 冬天", desc: "獲獎&技能🏆", link: "index.html#winter" },
+                        { type: 'received', text: "🎭 小劇場", desc: "意見反饋📮", link: "index2.html" }
+                ]
+            },
+                // 简体
+    chs: {
+        name: "欢迎来到 Reina 的小小世界",
+        subtitle: "时空旅者来电啦👋",
+        hangup: "挂断",
+        answer: "接听",
+        subtitleOn: "时空机",
+        subtitleOff: "关闭",
+        chatTitle: "时空机 / Time Machine",
+        liveTranscription: "点击进入即刻穿越",
+        aiPlaceholder: "点击上面按钮即刻穿越",
+        tooltip: "准备好穿越时空了么！",
+        langBtn: "EN",
+    chats: [
+    { type: 'received', text: "🌸 春天", desc: "作品集展示📖", link: "index.html#spring" },
+    { type: 'received', text: "☀️ 夏天", desc: "工作经历📚", link: "index.html#summer" },
+    { type: 'received', text: "🍂 秋天", desc: "个人主页👋", link: "index.html#autumn" },
+    { type: 'received', text: "❄️ 冬天", desc: "获奖&技能🏆", link: "index.html#winter" },
+        { type: 'received', text: "🎭 小剧场", desc: "意见反馈📮", link: "index2.html" }
+]
+    },
+            en: {
+                name: "Welcome to Reina's World",
+                  subtitle: "A call from a time traveler 👋",
+                hangup: "Hang Up",
+                answer: "Answer",
+                subtitleOn: "Time Machine",
+                subtitleOff: "Close",
+                chatTitle: "Time Machine/時空機",
+                liveTranscription: "Click to visit season pages",
+                  aiPlaceholder: "Click the buttons above to travel through time",
+                tooltip: "Click to start the journey",
+                langBtn: "繁",
+chats: [
+    { type: 'received', text: "🌸 Spring", desc: "Portfolio Showcase📖", link: "index.html#spring" },
+    { type: 'received', text: "☀️ Summer", desc: "Work Experience📚", link: "index.html#summer" },
+    { type: 'received', text: "🍂 Autumn", desc: "About Me👋", link: "index.html#autumn" },
+    { type: 'received', text: "❄️ Winter", desc: "Awards & Skills🏆", link: "index.html#winter" },
+        { type: 'received', text: "🎭 Theater", desc: "Feedback📮", link: "index2.html" }
+]
+            }
+        };
+
+        let currentLang = 'zh';
+
+        // 切换语言
+function toggleLanguage() {
+    if (currentLang === 'zh') currentLang = 'chs';
+    else if (currentLang === 'chs') currentLang = 'en';
+    else currentLang = 'zh';
+    updateUI();
+    renderChats();
+}
+
+
+        // ==================== 更新界面文字 ====================
+        function updateUI() {
+            const data = i18n[currentLang];
+            
+            // 更新所有带 data-i18n 属性的元素
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (data[key]) el.innerText = data[key];
+            });
+            
+            // 更新语言按钮文字
+            document.getElementById('langText').innerText = data.langBtn;
+            
+            // 更新目录按钮文字
+            const subtitleBtn = document.getElementById('subtitleText');
+            const sidebar = document.getElementById('chatSidebar');
+            subtitleBtn.innerText = sidebar.classList.contains('show') ? data.subtitleOff : data.subtitleOn;
+
+                // 👇 加这两行
+    document.getElementById('userInput').placeholder = data.aiPlaceholder;
+    document.getElementById('sendBtn').innerText = currentLang == 'zh' ? '發送' : currentLang == 'chs' ? '发送' : 'Send';
+        }
+        // ==================== 渲染目录（带小字说明）====================
+function renderChats() {
+    const chatHistory = document.getElementById('chatHistory');
+    chatHistory.innerHTML = '';
+    
+    const chats = i18n[currentLang].chats;
+    chats.forEach((msg, index) => {
+        const div = document.createElement('div');
+        div.className = `msg msg-${msg.type}`;
+        
+        div.innerHTML = `
+            <div style="font-weight: 600;">${msg.text}</div>
+            <span class="msg-desc">${msg.desc}</span>
+        `;
+        
+        // 🔥 核心修复：跳转后延迟 0.1 秒再滚动，破解自动回顶
+        div.onclick = () => {
+            if (msg.link.includes("#")) {
+                window.location.href = msg.link;
+                setTimeout(() => {
+                    const id = msg.link.split("#")[1];
+                    const target = document.getElementById(id);
+                    if (target) target.scrollIntoView({ behavior: "smooth" });
+                }, 100);
+            } else {
+                window.location.href = msg.link;
+            }
+        };
+        
+        div.style.animationDelay = `${index * 0.1}s`;
+        chatHistory.appendChild(div);
+    });
+}
+
+
+
+        // 切換目錄面板
+        function toggleChat() {
+            const sidebar = document.getElementById('chatSidebar');
+            const btnText = document.getElementById('subtitleText');
+            const data = i18n[currentLang];
+            sidebar.classList.toggle('show');
+            btnText.innerText = sidebar.classList.contains('show') ? data.subtitleOff : data.subtitleOn;
+            if(sidebar.classList.contains('show')) renderChats();
+        }
+
+        // 頁面加載
+        window.addEventListener('load', () => {
+            const overlay = document.getElementById('black-overlay');
+            const callInterface = document.getElementById('callInterface');
+            setTimeout(() => {
+                overlay.style.opacity = '0';
+                callInterface.classList.add('active');
+                setTimeout(() => {
+                    document.querySelector('.avatar-wrapper').classList.add('ringing');
+                }, 500);
+                renderChats();
+                updateUI();
+            }, 1200);
+        });
+
+        // 接聽
+function answerCall() {
+    const avatarWrapper = document.querySelector('.avatar-wrapper');
+    const timerDisplay = document.getElementById('timer');
+    avatarWrapper.classList.remove('ringing');
+    document.body.classList.add('call-active');
+    let seconds = 0;
+    setInterval(() => {
+        seconds++;
+        const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const secs = (seconds % 60).toString().padStart(2, '0');
+        timerDisplay.innerText = `${mins}:${secs}`;
+    }, 1000);
+    if (!document.getElementById('chatSidebar').classList.contains('show')) toggleChat();
+
+    // 加在这里 👇
+    setTimeout(() => {
+    window.location.href = "index.html" + window.location.search;
+}, 800); // 800毫秒后跳转，让动画先播放完，更自然
+}
+
+        // 掛斷
+        function hangUp() {
+            const callInterface = document.getElementById('callInterface');
+            const overlay = document.getElementById('black-overlay');
+            callInterface.style.opacity = '0';
+            callInterface.style.transform = 'scale(0.9)';
+            setTimeout(() => {
+                overlay.style.opacity = '1';
+                setTimeout(() => location.reload(), 1000);
+            }, 500);
+        }
+    </script>
+</body>
+</html>

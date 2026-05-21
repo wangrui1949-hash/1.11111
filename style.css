@@ -1,0 +1,34 @@
+/* ✅ 这部分：只影响导航栏里的「按钮」，不影响整个导航栏背景 */
+.dropdown-btn,
+.top-link,
+.lang-toggle {
+  background: rgba(255, 255, 255, 0.1);/* 按钮自己的半透明背景 */
+  border: 1px solid rgba(255, 255, 255, 0.3);
+   /* ... 其他按钮样式 ... */
+  border-radius: 50px;
+  padding: 8px 16px;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s;
+  backdrop-filter: blur(5px);
+  font-family: inherit;
+}
+/* ⚠️ 注意：这部分可能会影响视频切换！ */
+.season-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+}
+
+.season-video.active {
+  display: block;
+}

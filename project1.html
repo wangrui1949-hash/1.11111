@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="title">攝影照片集</title>
+    <style>
+        :root {
+            --bg-color: #f0f7f6;
+            --card-bg: #ffffff;
+            --text-color: #5b8c85;
+            --accent-blue: #a8d5ba;
+            --accent-dark: #7ab89e;
+            --shadow: 0 10px 20px rgba(0,0,0,0.08);
+            --shadow-hover: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px 60px;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        /* ===== 語言切換 ===== */
+        .lang-switch { 
+            display: flex; 
+            gap: 8px; 
+            margin-bottom: 25px;
+            background: var(--card-bg);
+            padding: 6px;
+            border-radius: 50px;
+            box-shadow: var(--shadow);
+        }
+        .lang-switch button { 
+            padding: 8px 16px; 
+            border: none; 
+            border-radius: 50px; 
+            background: transparent; 
+            color: var(--text-color); 
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .lang-switch button:hover { background: var(--accent-blue); }
+        .lang-switch button.active { 
+            background: var(--accent-dark); 
+            color: white; 
+            font-weight: 600;
+        }
+
+        h1 { 
+            font-weight: 400; 
+            letter-spacing: 3px; 
+            margin-bottom: 30px;
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            text-align: center;
+        }
+
+        /* ===== 日曆網格 ===== */
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 12px;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .day {
+            background: var(--card-bg);
+            aspect-ratio: 1 / 1;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            cursor: default; /* 預設不可點 */
+        }
+
+        /* ✅ 有照片的格子：改變樣式 + 可點擊 */
+        .day.has-photo {
+            cursor: pointer;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+            position: relative;
+        }
+        .day.has-photo::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 16px;
+            padding: 2px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-dark));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+        .day.has-photo:hover { 
+            transform: translateY(-5px) scale(1.03); 
+            box-shadow: var(--shadow-hover);
+        }
+
+        .day span { 
+            font-size: 1.3rem; 
+            font-weight: 600; 
+            opacity: 0.5;
+            z-index: 2;
+        }
+
+        /* ===== 照片樣式（關鍵修復）===== */
+        .photo {
+            position: absolute;
+            top: 6px; left: 6px; right: 6px; bottom: 6px;
+            border-radius: 12px;
+            background-size: cover;
+            background-position: center;
+            background-color: var(--accent-blue); /* ✅ 備援背景色 */
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);
+            /* ✅ 確保即使圖片載入失敗也有視覺回饋 */
+            min-width: calc(100% - 12px);
+            min-height: calc(100% - 12px);
+        }
+        
+        /* ✅ 圖片載入前的骨架動畫 */
+        .photo.loading {
+            background: linear-gradient(90deg, #e0e7e5 25%, #d1e0dc 50%, #e0e7e5 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* ✅ 圖片載入失敗的備援樣式 */
+        .photo.error {
+            background: linear-gradient(135deg, #cbd5e1, #94a3b8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .photo.error::after {
+            content: "📷";
+            margin-right: 4px;
+        }
+
+        /* ===== 燈箱 ===== */
+        #lightbox {
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.92);
+            display: none; 
+            justify-content: center; 
+            align-items: center;
+            z-index: 1000; 
+            cursor: zoom-out;
+            padding: 20px;
+            animation: fadeIn 0.2s ease-out;
+        }
+        #lightbox.active { display: flex; }
+        
+        #lightbox-img { 
+            max-width: 95%; 
+            max-height: 90vh; 
+            border-radius: 16px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+            object-fit: contain;
+            animation: zoomIn 0.3s ease-out;
+        }
+        
+        .lightbox-caption {
+            position: absolute;
+            bottom: 20px;
+            color: white;
+            font-size: 1rem;
+            background: rgba(0,0,0,0.5);
+            padding: 8px 20px;
+            border-radius: 50px;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* ===== 響應式 ===== */
+        @media (max-width: 768px) {
+            .calendar {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 10px;
+            }
+            .day span { font-size: 1.1rem; }
+        }
+        @media (max-width: 480px) {
+            .calendar {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+        }
+        /* ===== ▼▼▼【新增】燈箱描述樣式 ▼▼▼ ===== */
+.lightbox-caption {
+    position: absolute;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 800px;
+    text-align: center;
+    padding: 15px 30px;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    animation: slideUp 0.3s ease-out;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    z-index: 10;
+    pointer-events: none; /* 讓點擊穿透到燈箱背景 */
+}
+
+.desc-text {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 6px;
+    line-height: 1.5;
+    letter-spacing: 0.3px;
+}
+
+.desc-meta {
+    font-size: 0.9rem;
+    color: var(--accent-blue, #a8d5ba);
+    opacity: 0.9;
+    display: block;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+    .lightbox-caption {
+        bottom: 15px;
+        padding: 12px 20px;
+        max-width: 90%;
+    }
+    .desc-text { font-size: 1rem; }
+    .desc-meta { font-size: 0.85rem; }
+}
+
+/* 圖片載入動畫（如果還沒有可加上） */
+.lightbox-image.loading {
+    opacity: 0.6;
+    filter: blur(5px);
+    transition: all 0.3s ease;
+}
+    </style>
+</head>
+<body>
+
+    <!-- 語言切換 -->
+    <div class="lang-switch">
+        <button onclick="changeLang('en')" data-lang="en">English</button>
+        <button onclick="changeLang('zh-Hant')" data-lang="zh-Hant" class="active">繁體</button>
+        <button onclick="changeLang('zh-Hans')" data-lang="zh-Hans">简体</button>
+    </div>
+    
+    <h1 id="main-title" data-i18n="title">攝影照片集</h1>
+    
+    <div class="calendar" id="calendar"></div>
+
+    <!-- 燈箱 -->
+    <!-- ✅ 新燈箱：含描述區域 -->
+<div id="lightbox" onclick="closeLightbox(event)">
+    <img id="lightbox-img" src="" alt="" class="lightbox-image">
+    
+    <!-- ▼▼▼【新增】描述區域 ▼▼▼ -->
+    <div class="lightbox-caption">
+        <p id="lightbox-desc" class="desc-text"></p>
+        <span id="lightbox-meta" class="desc-meta"></span>
+    </div>
+</div>
+
+    <script>
+        // ===== 多語言詞典 =====
+        const translations = {
+            en: {
+                title: "Photography photo collection",
+                dayLabel: "Day",
+                photoLabel: "Event Photo",
+                clickHint: "Click to view",
+                loadError: "Image not found"
+            },
+            "zh-Hant": {
+                title: "攝影照片集",
+                dayLabel: "日",
+                photoLabel: "活動照片",
+                clickHint: "點擊檢視",
+                loadError: "圖片載入失敗"
+            },
+            "zh-Hans": {
+                title: "摄影照片集",
+                dayLabel: "日",
+                photoLabel: "活动照片",
+                clickHint: "点击查看",
+                loadError: "图片加载失败"
+            }
+        };
+
+        let currentLang = "zh-Hant";
+
+        // ===== 語言切換函數 =====
+        function changeLang(lang) {
+            currentLang = lang;
+            document.documentElement.lang = lang;
+            
+            // 更新按鈕狀態
+            document.querySelectorAll(".lang-switch button").forEach(btn => {
+                btn.classList.toggle("active", btn.dataset.lang === lang);
+            });
+            
+            // 更新 i18n 文字
+            document.querySelectorAll("[data-i18n]").forEach(el => {
+                const key = el.dataset.i18n;
+                if (translations[lang][key]) {
+                    el.textContent = translations[lang][key];
+                }
+            });
+            
+            // 重新渲染提示文字（可選）
+            updatePhotoHints();
+        }
+
+        function updatePhotoHints() {
+            const t = translations[currentLang];
+            document.querySelectorAll(".day.has-photo").forEach(day => {
+                day.title = `${t.photoLabel} - ${t.clickHint}`;
+            });
+        }
+
+        // ===== 燈箱功能 =====
+        // ✅ 完整函數：接收 dayNum 並顯示對應描述
+function openLightbox(imgSrc, dayNum) {
+    const lightbox = document.getElementById("lightbox");
+    const img = document.getElementById("lightbox-img");
+    const descEl = document.getElementById("lightbox-desc");
+    const metaEl = document.getElementById("lightbox-meta");
+    
+    // 載入中狀態
+    img.src = "";
+    img.classList.add("loading");
+    
+    // ▼▼▼【新增】根據當前語言獲取描述 ▼▼▼
+    const day = document.querySelector(`.day.has-photo[data-day="${dayNum}"]`);
+    const desc = day ? day.getAttribute(`data-desc-${currentLang}`) : "";
+    
+    // 更新描述 + 地點
+    descEl.textContent = desc;
+    metaEl.textContent = `📅 Day ${dayNum} • ${getLocationName(dayNum, currentLang)}`;
+    
+    // 載入圖片
+    const testImg = new Image();
+    testImg.onload = () => {
+        img.src = imgSrc;
+        img.classList.remove("loading");
+        lightbox.classList.add("active");  // ✅ 確保您有 .active 樣式或用 display:flex
+        lightbox.style.display = "flex";    // ✅ 或保留原有 display 控制
+        document.body.style.overflow = "hidden";
+    };
+    testImg.onerror = () => {
+        descEl.textContent = translations?.[currentLang]?.loadError || "Image load failed";
+        img.classList.remove("loading");
+        lightbox.style.display = "flex";
+    };
+    testImg.src = imgSrc;
+}
+
+// ▼▼▼【新增】輔助函數：獲取地點名稱（多語言） ▼▼▼
+function getLocationName(dayNum, lang) {
+    const locations = {
+        en: {4:"Singapore",8:"Tokyo",12:"Dubai",16:"London",20:"New York",24:"Berlin",28:"Shanghai"},
+        "zh-Hant": {4:"新加坡",8:"東京",12:"杜拜",16:"倫敦",20:"紐約",24:"柏林",28:"上海"},
+        "zh-Hans": {4:"新加坡",8:"东京",12:"迪拜",16:"伦敦",20:"纽约",24:"柏林",28:"上海"}
+    };
+    return locations[lang]?.[dayNum] || locations.en[dayNum] || "";
+}
+
+        // ===== 生成日曆 + 照片 =====
+        const calendar = document.getElementById('calendar');
+        
+        // ✅ 使用 Picsum 示範圖片（開發時用），上線時換成您的真實路徑
+        // 格式：https://picsum.photos/seed/{seed}/400/400
+        const getImageUrl = (dayNum) => {
+            // 🔸【重要】上線時請改為您的真實圖片路徑：
+            // return `./images/summer/${dayNum}.jpg`;
+            
+            // 🔸 開發測試用（隨機會議風格圖片）：
+            return `https://picsum.photos/seed/conference-${dayNum}/600/600`;
+        };
+
+        for (let i = 1; i <= 28; i++) {
+            const day = document.createElement('div');
+            day.className = 'day';
+            const t = translations[currentLang];
+
+            // ✅ 只有 i%4===0 的格子放照片（4,8,12...28）
+            // ✅ 新代碼：含多語言描述（直接複製貼上）
+if (i % 4 === 0) {
+    const photoUrl = getImageUrl(i);  // ✅ 確保您已有這個函數
+    
+    // ▼▼▼【新增】多語言描述數據 ▼▼▼
+    const descriptions = {
+        en: {
+            4: "Opening keynote at Global Tech Summit 2026, Singapore",
+            8: "Networking session with industry leaders, Tokyo Expo",
+            12: "Product launch ceremony, Dubai Innovation Hub",
+            16: "Panel discussion on AI & Sustainability, London",
+            20: "Award ceremony highlighting excellence, New York",
+            24: "Exhibition booth showcase, Berlin Trade Fair",
+            28: "Closing gala dinner with live performance, Shanghai"
+        },
+        "zh-Hant": {
+            4: "2026 全球科技峰會開幕主題演講・新加坡",
+            8: "產業領袖交流互動環節・東京博覽會",
+            12: "新產品發布儀式・杜拜創新中心",
+            16: "人工智慧與永續發展圓桌論壇・倫敦",
+            20: "年度卓越頒獎盛典・紐約",
+            24: "展區創新成果展示・柏林貿易展",
+            28: "閉幕晚宴暨現場表演・上海"
+        },
+        "zh-Hans": {
+            4: "2026 全球科技峰会开幕主题演讲・新加坡",
+            8: "产业领袖交流互动环节・东京博览会",
+            12: "新产品发布仪式・迪拜创新中心",
+            16: "人工智能与可持续发展圆桌论坛・伦敦",
+            20: "年度卓越颁奖盛典・纽约",
+            24: "展区创新成果展示・柏林贸易展",
+            28: "闭幕晚宴暨现场表演・上海"
+        }
+    };
+    
+    // ▼▼▼ 設置格子樣式與屬性 ▼▼▼
+    day.classList.add('has-photo');
+    day.setAttribute('data-img', photoUrl);
+    day.setAttribute('data-day', i);
+    
+    // ▼▼▼【新增】存入三語描述 ▼▼▼
+    day.setAttribute('data-desc-en', descriptions.en[i]);
+    day.setAttribute('data-desc-zh-Hant', descriptions["zh-Hant"][i]);
+    day.setAttribute('data-desc-zh-Hans', descriptions["zh-Hans"][i]);
+    
+    // ▼▼▼ 渲染照片 DOM（含載入狀態處理） ▼▼▼
+    day.innerHTML = `
+        <div class="photo loading" 
+             style="background-image: url('${photoUrl}')"
+             onload="this.classList.remove('loading')"
+             onerror="this.classList.add('error'); this.style.backgroundImage='none'">
+        </div>
+    `;
+    
+    // ▼▼▼ 點擊開啟燈箱（傳入 dayNum） ▼▼▼
+    day.onclick = () => {
+        openLightbox(photoUrl, i);  // ✅ 注意：這裡傳入 i 作為 dayNum
+    };
+    
+} else {
+    // 普通日期格子（不變）
+    day.innerHTML = `<span>${i}</span>`;
+}
+
+            calendar.appendChild(day);
+        }
+
+        // ✅ 鍵盤支援：ESC 關閉燈箱
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeLightbox();
+        });
+
+        // 初始化
+        updatePhotoHints();
+    </script>
+</body>
+</html>

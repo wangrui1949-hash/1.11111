@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>春天互動小劇場</title>
+    
+    <!-- ============ 【可改】字体加载 ============ -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- ============ 【不要改】彩带特效库 ============ -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <style>
+        /* ============ 【可改】主题颜色变量 ============ */
+        :root { 
+            --primary-green: #4a7c59;      /* 主绿色 - 按钮/强调色 */
+            --hover-green: #3d6849;         /* 悬停绿色 - 按钮悬停 */
+            --accent-orange: #d4a574;       /* 点缀橙色 - 星星/高亮 */
+            --text-dark: #2d3e2b;           /* 深色文字 */
+        }
+        
+        /* ============ 【不要改】全局重置 ============ */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body { 
+            font-family: 'Inter', 'Noto Serif TC', serif; 
+            background-color: #f5f0e8; 
+            overflow: hidden; 
+            height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
+        
+        /* ============ 【可改】背景图层 ============ */
+        #bg-layer { 
+            position: fixed; 
+            inset: 0; 
+            z-index: -10; 
+            background-size: cover; 
+            background-position: center; 
+            transition: background-image 1s ease-in-out;  /* 背景切换动画 */
+            transform: scale(1.05);  /* 防止模糊边缘留白 */
+        }
+
+        /* ============ 【可改】返回首页按钮（左上角） ============ */
+        .back-to-html1 {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,245,0.9);
+            border: 1px solid var(--primary-green);
+            color: var(--primary-green);
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            z-index: 999;
+            backdrop-filter: blur(6px);
+            transition: all 0.3s;
+        }
+        .back-to-html1:hover {
+            background: var(--primary-green);
+            color: #fff;
+            transform: scale(1.05);
+        }
+        
+        /* ============ 【可改】语言切换按钮（右上角） ============ */
+        .lang-switch-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 245, 0.85);
+            border: 1px solid var(--primary-green);
+            color: var(--primary-green);
+            padding: 6px 16px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            z-index: 150;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .lang-switch-btn:hover {
+            background: var(--primary-green);
+            color: white;
+            transform: scale(1.05);
+        }
+
+        /* ============ 【可改】毛玻璃卡片容器 ============ */
+        .liquid-glass { 
+            position: relative;
+            background: rgba(255, 255, 245, 0.88); 
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px); 
+            border-radius: 2.5rem; 
+            padding: 3.5rem 3rem 3rem 3rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08); 
+            border: 1px solid rgba(120,90,40,0.1); 
+            max-width: 500px; 
+            width: 90%; 
+            text-align: center; 
+            display: none;  /* 默认隐藏，通过 .active 显示 */
+            animation: fadeIn 0.5s ease-out forwards; 
+        }
+        .active { display: block; }
+        
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(15px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        
+        /* ============ 【可改】卡片内返回箭头（右上角） ============ */
+        .back-arrow {
+            position: absolute;
+            top: 1.2rem;
+            right: 1.5rem;
+            font-size: 1.8rem;
+            color: var(--primary-green);
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+            line-height: 1;
+            font-weight: bold;
+        }
+        .back-arrow:hover {
+            color: var(--accent-orange);
+            transform: scale(1.2);
+        }
+
+        /* ============ 【可改】主要按钮样式 ============ */
+        .btn-primary { 
+            background: var(--primary-green); 
+            color: white; 
+            border: none; 
+            border-radius: 999px; 
+            padding: 0.8rem 2.5rem; 
+            font-size: 1.1rem; 
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: all 0.3s; 
+            margin-top: 1rem; 
+        }
+        .btn-primary:hover { background: var(--hover-green); transform: scale(1.05); }
+        
+        /* ============ 【可改】小精灵容器（右下角） ============ */
+        #elf-container { 
+            position: fixed; 
+            bottom: 30px; 
+            right: 30px; 
+            z-index: 100; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: flex-end; 
+        }
+        #elf-avatar { 
+            font-size: 5rem; 
+            cursor: pointer; 
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.2)); 
+        }
+        .floating { animation: floating 3s ease-in-out infinite; }
+        
+        @keyframes floating { 
+            0%, 100% { transform: translateY(0px); } 
+            50% { transform: translateY(-15px); } 
+        }
+        
+        /* ============ 【可改】聊天窗口样式 ============ */
+        #chat-window { 
+            width: 280px; 
+            height: 350px; 
+            background: white; 
+            border-radius: 1.5rem; 
+            margin-bottom: 15px; 
+            display: none; 
+            flex-direction: column; 
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15); 
+            border: 1px solid rgba(74, 124, 89, 0.2); 
+            overflow: hidden; 
+        }
+        #chat-header { 
+            background: var(--primary-green); 
+            color: white; 
+            padding: 10px 15px; 
+            font-size: 0.9rem; 
+            font-weight: bold; 
+            display: flex; 
+            justify-content: space-between; 
+        }
+        #chat-messages { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 15px; 
+            background: #fcfaf7; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px; 
+        }
+        
+        .msg { 
+            padding: 8px 12px; 
+            border-radius: 12px; 
+            font-size: 0.85rem; 
+            max-width: 85%; 
+            line-height: 1.4; 
+        }
+        .msg-elf { background: #eef5ef; color: #3d6849; align-self: flex-start; }
+        .msg-user { background: var(--primary-green); color: white; align-self: flex-end; }
+        
+        #chat-input-wrap { 
+            padding: 10px; 
+            display: flex; 
+            gap: 5px; 
+            border-top: 1px solid #eee; 
+        }
+        #chat-input { 
+            flex: 1; 
+            border: 1px solid #eee; 
+            border-radius: 20px; 
+            padding: 5px 15px; 
+            outline: none; 
+        }
+        
+        /* ============ 【可改】分支按钮容器 ============ */
+        .branch-container { 
+            position: fixed; 
+            bottom: 15%; 
+            display: flex; 
+            gap: 20px; 
+            z-index: 20; 
+        }
+        
+        /* ============ 【可改】星级评分样式 ============ */
+        .star-rating span { cursor: pointer; font-size: 1.5rem; color: #ccc; }
+        .star-rating span.active { color: var(--accent-orange); }
+    </style>
+</head>
+<body>
+
+    <!-- ============ 【可改】返回首页按钮 ============ -->
+    <button class="back-to-html1" onclick="goBackToHtml1()">← 返回首页</button>
+
+    <!-- ============ 【不要改】背景图层 ============ -->
+    <div id="bg-layer"></div>
+
+    <!-- ============ 【不要改】语言切换按钮 ============ -->
+    <!-- ✅ 初始文字设为"简体"，因为 currentLang='zh'（繁体） -->
+    <button class="lang-switch-btn" onclick="toggleLanguage()">简体</button>
+
+    <!-- ============ 页面1：首页 ============ -->
+    <div id="page-1" class="liquid-glass active">
+        <div style="font-size: 3rem; margin-bottom: 1rem">🌸</div>
+        <!-- ✅ 所有可翻译文字都加了 id，方便 JS 更新 -->
+        <h1 id="p1-title">春天小劇場</h1>
+        <h2 id="p1-subtitle">很高興認識你</h2>
+        <p id="p1-desc" style="color: #666; line-height: 1.6">
+            點擊右下角的<span style="color: var(--primary-green); font-weight: bold">小精靈</span>，她隨時準備好跟你聊天喔！✨
+        </p>
+        <button id="p1-btn" class="btn-primary" onclick="showPage(2)">進入冒險 →</button>
+    </div>
+
+    <!-- ============ 页面2：引导页 ============ -->
+    <div id="page-2" class="liquid-glass">
+        <span class="back-arrow" onclick="goBack()" title="返回上一步">←</span>
+        <div style="font-size: 3rem; margin-bottom: 1rem">💭</div>
+        <h2 id="p2-title">喜歡我的網站嗎？</h2>
+        <p id="p2-desc" style="color: #666">右下角<span style="color: var(--primary-green); font-weight: bold">小精靈</span>也在旁邊偷聽你的答案...</p>
+        <button id="p2-btn" class="btn-primary" onclick="showPage(3)">讓我想想 →</button>
+    </div>
+
+    <!-- ============ 页面3：选择分歧 ============ -->
+    <div id="page-3" class="liquid-glass">
+        <div style="font-size: 3rem; margin-bottom: 1rem">🤔</div>
+        <span class="back-arrow" onclick="goBack()" title="返回上一步">←</span>
+        <h2 id="p3-title">你的真實想法是？</h2>
+      <p id="p3-desc" style="color: #999; font-style: italic">請點擊下方的選項...</p>
+    </div>
+    <!-- ✅ 分支按钮容器，点击后显示 -->
+    <div id="branch-btns" class="branch-container" style="display: none;">
+        <button id="btn-like" class="btn-primary" onclick="handleChoice('like')">💚 喜歡</button>
+        <button id="btn-improve" class="btn-primary" style="background:#d4a574" onclick="handleChoice('improve')">🌱 要改進</button>
+    </div>
+
+    <!-- ============ 页面4：喜欢路径 ============ -->
+    <div id="page-4" class="liquid-glass">
+        <div style="font-size: 4rem; margin-bottom: 1rem">💕</div>
+        <span class="back-arrow" onclick="goBack()" title="返回上一步">←</span>
+        <h2 id="p4-title">拜託！我也很喜歡你</h2>
+        <p id="p4-desc" style="color: #444; font-weight: 500">看這陽光多燦爛，心情也跟著變好了！</p>
+        <button id="p4-btn" class="btn-primary" onclick="showPage(6)">留下足跡 →</button>
+    </div>
+
+    <!-- ============ 页面5：改进路径 ============ -->
+    <div id="page-5" class="liquid-glass">
+        <div style="font-size: 4rem; margin-bottom: 1rem">📝</div>
+        <span class="back-arrow" onclick="goBack()" title="返回上一步">←</span>
+        <h2 id="p5-title">超級需要你的建議</h2>
+        <p id="p5-desc" style="color: #666">每一顆種子都需要細心灌溉...</p>
+        <button id="p5-btn" class="btn-primary" onclick="showPage(6)">寫下建議 →</button>
+    </div>
+
+    <!-- ============ 页面6：反馈表单 ============ -->
+    <div id="page-6" class="liquid-glass" style="max-width: 600px;">
+        <span class="back-arrow" onclick="goBack()" title="返回上一步">←</span>
+        <h2 id="p6-title" style="margin-bottom: 1rem; color: var(--text-dark);">📬 春天信箱</h2>
+        <!-- ✅ 表单字段的 placeholder 也会随语言切换 -->
+        <input type="text" id="form-name" placeholder="你的名字" style="margin-bottom:10px; padding:10px; border-radius:10px; border:1px solid #ddd; width:100%">
+        <input type="email" id="form-email" placeholder="你的邮箱📮" style="margin-bottom:10px; padding:10px; border-radius:10px; border:1px solid #ddd; width:100%">
+        <textarea id="form-msg" rows="4" placeholder="分享你的想法..." style="width:100%; padding:10px; border-radius:10px; border:1px solid #ddd;"></textarea>
+        <div class="star-rating" id="star-wrap">
+            <span onclick="setRating(1)">★</span><span onclick="setRating(2)">★</span><span onclick="setRating(3)">★</span><span onclick="setRating(4)">★</span><span onclick="setRating(5)">★</span>
+        </div>
+        <button id="p6-btn" class="btn-primary" style="width:100%" onclick="submitFeedback()">💌 送出回饋信</button>
+    </div>
+
+    <!-- ============ 结束页 ============ -->
+    <div id="page-finish" class="liquid-glass">
+        <div style="font-size: 4rem; margin-bottom: 1rem">✨</div>
+        <h2 id="pf-title">信件已送達！</h2>
+        <p id="finish-msg" style="margin: 1rem 0; color: #555; font-style: italic;"></p>
+        <button id="pf-btn" class="btn-primary" onclick="location.reload()">🌼 下次再見</button>
+    </div>
+
+    <!-- ============ 小精灵聊天组件 ============ -->
+    <div id="elf-container">
+        <div id="chat-window">
+            <div id="chat-header">
+                <span id="chat-title">🌸 春天精靈對話室</span>
+                <span onclick="toggleChat()" style="cursor:pointer">✕</span>
+            </div>
+            <div id="chat-messages"></div>
+            <div id="chat-input-wrap">
+                <input type="text" id="chat-input" placeholder="說點什麼...">
+                <button id="chat-send-btn" onclick="sendChat()" style="border:none; background:var(--primary-green); color:white; padding:5px 10px; border-radius:10px;">傳送</button>
+            </div>
+        </div>
+        <div id="elf-avatar" class="floating" onclick="toggleChat()">🧚‍♀️</div>
+    </div>
+
+    <script>
+        // ============ 【可改】返回首页函数 ============
+        function goBackToHtml1() {
+            // 🔧 如果首页文件名不同，请修改这里
+            window.location.href = "index.html";
+        }
+
+        // ============ 🔴【必须改】DeepSeek API Key ============
+        const DEEPSEEK_API_KEY = "在這裡填入你的 DeepSeek API Key"; 
+        // =================================================================
+
+        // ============ 【可改】多语言翻译字典 ============
+        // ✅ 键名规范：'zh'=繁体, 'chs'=简体, 'en'=英文
+        // ✅ 每个语言包必须包含相同的字段名
+        const translations = {
+            // 🔹 繁体中文
+            'zh': {
+                langBtn: "简体",           // 点击后显示的文字
+                backHome: "← 返回首页",     // 返回首页按钮
+                p1Title: "春天小劇場",
+                p1Subtitle: "很高興認識你",
+                p1Desc: '點擊右下角的<span style="color:var(--primary-green)">小精靈</span>，她隨時準備好跟你聊天喔！✨',
+                p1Btn: "進入冒險 →",
+                p2Title: "喜歡我的網站嗎？",
+                p2Desc: '右下角<span style="color:var(--primary-green)">小精靈</span>也在旁邊偷聽你的答案...',
+                p2Btn: "讓我想想 →",
+                p3Title: "你的真實想法是？",
+                p3Desc: "請點擊下方的選項...",
+                btnLike: "💚 喜歡",
+                btnImprove: "🌱 要改進",
+                p4Title: "拜託！我也很喜歡你",
+                p4Desc: "看這陽光多燦爛，心情也跟著變好了！",
+                p4Btn: "留下足跡 →",
+                p5Title: "超級需要你的建議",
+                p5Desc: "每一顆種子都需要細心灌溉...",
+                p5Btn: "寫下建議 →",
+                p6Title: "📬 春天信箱",
+                p6Name: "你的名字",
+                p6Email: "你的邮箱📮",
+                p6Msg: "分享你的想法...",
+                p6Btn: "💌 送出回饋信",
+                pfTitle: "信件已送達！",
+                pfBtn: "🌼 下次再見",
+                chatTitle: "🌸 春天精靈對話室",
+                chatPlaceholder: "說點什麼...",
+                chatSend: "傳送",
+                chatWelcome: "嗨！我是春天小精靈🧚‍♀️，你可以跟我聊天，或者分享你的心情！✨",
+                // 🔹 AI 系统提示词 - 控制小精灵的回复风格
+                elfSystemPrompt: "你是一位活潑可愛的春天小精靈🧚‍♀️，說話簡短且充滿表情符號。請用繁體中文在 40 字以內回覆。",
+                elfThankSystemPrompt: "你是一位精緻熱情的春天精靈。請用繁體中文給予一句充滿朝氣的感謝。",
+                alertFill: "請填寫名字和想法喔！",
+                fallbackMsg: "小精靈已經把你的心意送到森林深處了！"
+            },
+            
+            // 🔹 简体中文
+            'chs': {
+                langBtn: "EN",
+                backHome: "← 返回首页",
+                p1Title: "春天小剧场",
+                p1Subtitle: "很高兴认识你",
+                p1Desc: '点击右下角的<span style="color:var(--primary-green)">小精灵</span>，她随时准备好跟你聊天喔！✨',
+                p1Btn: "进入冒险 →",
+                p2Title: "喜欢我的网站吗？",
+                p2Desc: '右下角<span style="color:var(--primary-green)">小精灵</span>也在旁边偷听你的答案...',
+                p2Btn: "让我想想 →",
+                p3Title: "你的真实想法是？",
+                p3Desc: "请点击下方的选项...",
+                btnLike: "💚 喜欢",
+                btnImprove: "🌱 要改进",
+                p4Title: "拜托！我也很喜欢你",
+                p4Desc: "看这阳光多灿烂，心情也跟着变好了！",
+                p4Btn: "留下足迹 →",
+                p5Title: "超级需要你的建议",
+                p5Desc: "每一颗种子都需要细心灌溉...",
+                p5Btn: "写下建议 →",
+                p6Title: "📬 春天信箱",
+                p6Name: "你的名字",
+                p6Email: "你的邮箱📮",
+                p6Msg: "分享你的想法...",
+                p6Btn: "💌 送出反馈信",
+                pfTitle: "信件已送达！",
+                pfBtn: "🌼 下次再见",
+                chatTitle: "🌸 春天精灵对话室",
+                chatPlaceholder: "说点什么...",
+                chatSend: "发送",
+                chatWelcome: "嗨！我是春天小精灵🧚‍♀️，你可以跟我聊天，或者分享你的心情！✨",
+                elfSystemPrompt: "你是一位活泼可爱的春天小精灵🧚‍♀️，说话简短且充满表情符号。请用简体中文在 40 字以内回复。",
+                elfThankSystemPrompt: "你是一位精致热情的春天精灵。请用简体中文给予一句充满朝气的感谢。",
+                alertFill: "请填写名字和想法喔！",
+                fallbackMsg: "小精灵已经把你的心意送到森林深处了！"
+            },
+            
+            // 🔹 英文
+            'en': {
+                langBtn: "繁體",
+                backHome: "← Back",
+                p1Title: "Spring Theater",
+                p1Subtitle: "Nice to meet you",
+                p1Desc: 'Click the <span style="color:var(--primary-green)">elf</span> in the bottom right corner, she is ready to chat with you! ✨',
+                p1Btn: "Start Adventure →",
+                p2Title: "Do you like my website?",
+                p2Desc: 'The <span style="color:var(--primary-green)">elf</span> is listening...',
+                p2Btn: "Let me think →",
+                p3Title: "What are your honest thoughts?",
+                p3Desc: "Please click the options below...",
+                btnLike: "💚 Like It",
+                btnImprove: "🌱 Needs Improvement",
+                p4Title: "Oh! I like you too!",
+                p4Desc: "Look at the sunshine, it makes me happy!",
+                p4Btn: "Leave a message →",
+                p5Title: "I really need your advice",
+                p5Desc: "Every seed needs care...",
+                p5Btn: "Write suggestion →",
+                p6Title: "📬 Spring Mailbox",
+                p6Name: "Your Name",
+                p6Email: "Your Email",
+                p6Msg: "Share your thoughts...",
+                p6Btn: "💌 Send Feedback",
+                pfTitle: "Message Sent!",
+                pfBtn: "🌼 See You Next Time",
+                chatTitle: "🌸 Spring Elf Chat",
+                chatPlaceholder: "Type something...",
+                chatSend: "Send",
+                chatWelcome: "Hi! I'm Spring Elf 🧚‍♀️. Let's chat! ✨",
+                elfSystemPrompt: "You are a cute Spring Elf 🧚‍♀️. Reply in English under 40 words with emojis.",
+                elfThankSystemPrompt: "You are a warm Spring Elf. Write a short thank you in English.",
+                alertFill: "Please fill in name and message!",
+                fallbackMsg: "Your message has been sent to the forest!"
+            }
+        };
+
+        // ============ 【不要改】语言状态管理 ============
+        let currentLang = 'zh';  // 默认语言：繁体中文
+        // 语言切换顺序：繁 → 简 → 英 → 繁
+
+        // ============ 【可改】背景图配置 ============
+        const backgrounds = {
+            home: "https://i.pinimg.com/736x/f1/7b/e2/f17be2046c5b2a1b5ab47a492bf72740.jpg",
+            quest: "https://i.pinimg.com/736x/2d/1c/01/2d1c01e1a8bcc39c71b1bf688b1fb7ed.jpg",
+            like: "https://i.pinimg.com/736x/13/78/79/137879a415d35dc7f53ee57a9b1a581e.jpg",
+            improve: "https://i.pinimg.com/736x/55/23/b0/5523b0c81ccee000dccae23a7dd758aa.jpg",
+            finish: "https://i.pinimg.com/736x/be/a7/ab/bea7ab20b6fbd0d5341edadc941f79d2.jpg",
+        };
+
+        // ============ 【不要改】页面历史记录（用于返回功能） ============
+        let pageHistory = [1];
+        // 初始化背景
+        document.getElementById('bg-layer').style.backgroundImage = `url(${backgrounds.home})`;
+
+        // ============ 🔹 切换语言主函数 ============
+        function toggleLanguage() {
+            // 循环切换：繁 → 简 → 英 → 繁
+            if (currentLang === 'zh') currentLang = 'chs';
+            else if (currentLang === 'chs') currentLang = 'en';
+            else currentLang = 'zh';
+            
+            updateLanguageUI();  // 更新所有文字
+        }
+
+        // ============ 🔹 更新界面所有文字 ============
+        function updateLanguageUI() {
+            const d = translations[currentLang];
+            
+            // 1. 更新顶部按钮
+            document.querySelector('.lang-switch-btn').innerText = d.langBtn;
+            document.querySelector('.back-to-html1').innerText = d.backHome;
+
+            // 2. 更新第1页
+            document.getElementById('p1-title').innerText = d.p1Title;
+            document.getElementById('p1-subtitle').innerText = d.p1Subtitle;
+            document.getElementById('p1-desc').innerHTML = d.p1Desc;  // 用 innerHTML 支持 <span> 标签
+            document.getElementById('p1-btn').innerText = d.p1Btn;
+
+            // 3. 更新第2页
+            document.getElementById('p2-title').innerText = d.p2Title;
+            document.getElementById('p2-desc').innerHTML = d.p2Desc;
+            document.getElementById('p2-btn').innerText = d.p2Btn;
+
+            // 4. 更新第3页 + 分支按钮
+            document.getElementById('p3-title').innerText = d.p3Title;
+            document.getElementById('p3-desc').innerText = d.p3Desc;  
+            document.getElementById('btn-like').innerText = d.btnLike;
+            document.getElementById('btn-improve').innerText = d.btnImprove;
+
+            // 5. 更新第4-5页
+            document.getElementById('p4-title').innerText = d.p4Title;
+            document.getElementById('p4-desc').innerText = d.p4Desc;
+            document.getElementById('p4-btn').innerText = d.p4Btn;
+            document.getElementById('p5-title').innerText = d.p5Title;
+            document.getElementById('p5-desc').innerText = d.p5Desc;
+            document.getElementById('p5-btn').innerText = d.p5Btn;
+
+            // 6. 更新第6页（表单）
+            document.getElementById('p6-title').innerText = d.p6Title;
+            document.getElementById('form-name').placeholder = d.p6Name;
+            document.getElementById('form-email').placeholder = d.p6Email;
+            document.getElementById('form-msg').placeholder = d.p6Msg;
+            document.getElementById('p6-btn').innerText = d.p6Btn;
+
+            // 7. 更新结束页
+            document.getElementById('pf-title').innerText = d.pfTitle;
+            document.getElementById('pf-btn').innerText = d.pfBtn;
+
+            // 8. 更新聊天组件
+            document.getElementById('chat-title').innerText = d.chatTitle;
+            document.getElementById('chat-input').placeholder = d.chatPlaceholder;
+            document.getElementById('chat-send-btn').innerText = d.chatSend;
+        }
+
+        // ============ 🔹 页面切换函数 ============
+        function showPage(num, isBack = false) {
+            // 记录页面历史（用于返回功能）
+            if (!isBack && pageHistory[pageHistory.length - 1] !== num) {
+                pageHistory.push(num);
+            }
+
+            // 隐藏所有页面，显示目标页面
+            document.querySelectorAll('.liquid-glass').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-' + num).classList.add('active');
+            
+            // 控制分支按钮显示/隐藏
+            if(num === 3) document.getElementById('branch-btns').style.display = 'flex';
+            else document.getElementById('branch-btns').style.display = 'none';
+
+            // 切换背景图
+            const bgLayer = document.getElementById('bg-layer');
+            if (num === 1) bgLayer.style.backgroundImage = `url(${backgrounds.home})`;
+            else if (num === 2 || num === 3) bgLayer.style.backgroundImage = `url(${backgrounds.quest})`;
+            else if (num === 4) bgLayer.style.backgroundImage = `url(${backgrounds.like})`;
+            else if (num === 5 || num === 6) bgLayer.style.backgroundImage = `url(${backgrounds.improve})`;
+            else if (num === 'finish') bgLayer.style.backgroundImage = `url(${backgrounds.finish})`;
+        }
+
+        // ============ 🔹 返回上一页 ============
+        function goBack() {
+            if (pageHistory.length > 1) {
+                pageHistory.pop();  // 移除当前页
+                const prevPage = pageHistory[pageHistory.length - 1];  // 获取上一页
+                showPage(prevPage, true);  // 显示上一页
+            }
+        }
+
+        // ============ 🔹 处理分支选择 ============
+        function handleChoice(type) {
+            // 切换背景
+            document.getElementById('bg-layer').style.backgroundImage = `url(${backgrounds[type]})`;
+            // 跳转到对应页面（喜欢→4，改进→5）
+            showPage(type === 'like' ? 4 : 5);
+        }
+
+        // ============ 🔹 星级评分 ============
+        let currentRating = 0;
+        function setRating(r) {
+            currentRating = r;
+            document.querySelectorAll('#star-wrap span').forEach((s, i) => {
+                s.classList.toggle('active', i < r);  // 点亮前 r 颗星
+            });
+        }
+
+        // ============ 🔹 切换聊天窗口 ============
+        function toggleChat() {
+            const win = document.getElementById('chat-window');
+            const isVisible = win.style.display === 'flex';
+            win.style.display = isVisible ? 'none' : 'flex';
+            
+            // 首次打开时显示欢迎语
+            if(!isVisible && document.getElementById('chat-messages').innerHTML === "") {
+                addMessage('elf', translations[currentLang].chatWelcome);
+            }
+        }
+
+        // ============ 🔹 添加聊天消息 ============
+        function addMessage(role, text) {
+            const box = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = `msg msg-${role}`;
+            div.innerText = text;
+            box.appendChild(div);
+            box.scrollTop = box.scrollHeight;  // 自动滚动到底部
+        }
+
+        // ============ 🔹 调用 DeepSeek API ============
+        async function callDeepSeek(prompt, systemMsg) {
+            const url = "https://api.deepseek.com/chat/completions";
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: "deepseek-chat",
+                        messages: [
+                            { role: "system", content: systemMsg },
+                            { role: "user", content: prompt }
+                        ],
+                        stream: false
+                    })
+                });
+                const data = await response.json();
+                return data.choices[0].message.content;
+            } catch (error) {
+                console.error("DeepSeek Error:", error);
+                // 出错时返回友好提示（随语言变化）
+                return currentLang === 'zh' ? 
+                    "哎呀，春天的小腦袋卡住了... 🌸 請再試一次！" : 
+                    "Oops! The spring breeze got me dizzy... 🌸 Please try again!";
+            }
+        }
+
+        // ============ 🔹 发送聊天消息 ============
+        async function sendChat() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if(!text) return;
+            
+            addMessage('user', text);  // 显示用户消息
+            input.value = "";  // 清空输入框
+            
+            // 显示"发送中..."（可选优化）
+            const loadingMsg = document.createElement('div');
+            loadingMsg.className = 'msg msg-elf';
+            loadingMsg.innerText = '🌸 思考中...';
+            loadingMsg.id = 'loading-msg';
+            document.getElementById('chat-messages').appendChild(loadingMsg);
+            
+            // 调用 AI
+            const reply = await callDeepSeek(text, translations[currentLang].elfSystemPrompt);
+            
+            // 移除加载消息，显示回复
+            document.getElementById('loading-msg')?.remove();
+            addMessage('elf', reply);
+        }
+
+        // ============ 🔹 提交反馈表单 ============
+        async function submitFeedback() {
+            const name = document.getElementById('form-name').value.trim();
+            const msg = document.getElementById('form-msg').value.trim();
+            const dict = translations[currentLang];
+            
+            // 验证输入
+            if(!name || !msg) {
+                return alert(dict.alertFill);
+            }
+
+            // 1. 播放彩带动画
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.7 } });
+            
+            // 2. 跳转到结束页
+            showPage('finish');
+            document.getElementById('bg-layer').style.backgroundImage = `url(${backgrounds.finish})`;
+            document.getElementById('finish-msg').innerText = dict.fallbackMsg;
+
+            // 3. 用 AI 生成个性化感谢语
+            const res = await callDeepSeek(
+                `User ${name} left a ${currentRating} star feedback: ${msg}`, 
+                dict.elfThankSystemPrompt
+            );
+            document.getElementById('finish-msg').innerText = res;
+        }
+
+        // ============ 【不要改】监听 Enter 键发送消息 ============
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') sendChat();
+        });
+
+        // ============ 【不要改】页面加载时初始化 ============
+        // 确保所有文字显示为默认语言（繁体）
+        updateLanguageUI();
+    </script>
+</body>
+</html>
