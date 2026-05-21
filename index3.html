@@ -107,7 +107,7 @@
         width: 36px;
         height: 36px;
         pointer-events: none;
-        z-index: 9999;
+        z-: 9999;
         transform: translate(-50%, -50%);
         transition: transform 0.08s linear;
         font-size: 24px;
@@ -124,7 +124,7 @@
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-: 1000;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -238,13 +238,13 @@ body.scrolled #topbar {
         position: absolute;
         inset: 0;
         pointer-events: none;
-        z-index: 1;
+        z-: 1;
         mix-blend-mode: normal;
       }
 
       .section-content {
   position: relative;
-  z-index: 2;
+  z-: 2;
   width: 100%;
   /* max-width: 1200px; 删掉这一行 */
   max-width: 1400px; /* 或者改成 1400px，让内容更宽 */
@@ -340,7 +340,7 @@ body.scrolled #topbar {
         align-items: center;
         justify-content: center;
         font-size: 70px;
-        z-index: 1;
+        z-: 1;
         transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         box-shadow: 0 0 50px rgba(255, 188, 61, 0.6);
       }
@@ -575,7 +575,7 @@ body.scrolled #topbar {
         bottom: 40px;
         right: 60px;
         font-size: 80px;
-        z-index: 3;
+        z-: 3;
         filter: drop-shadow(0 0 30px rgba(200, 228, 255, 0.7));
         transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
         will-change: transform;
@@ -737,7 +737,7 @@ body.scrolled #topbar {
         justify-content: center;
         font-size: 1rem;
         transition: background 0.3s, transform 0.3s;
-        z-index: 2;
+        z-: 2;
         overflow: hidden;
       }
       .carousel-btn:hover {
@@ -942,7 +942,7 @@ body.scrolled #topbar {
         );
         opacity: 0;
         animation: rainbowFade 8s infinite ease-in-out;
-        z-index: 1;
+        z-: 1;
       }
       @keyframes rainbowFade {
         0%,
@@ -1227,11 +1227,11 @@ body.scrolled #topbar {
       >
     </div>
   </div>
-  <a href="index2.html" class="top-link ripple-container">
+  <a href="2.html" class="top-link ripple-container">
     <span data-en="Mini Theater" data-zh="小劇場" data-chs="小剧场">Mini Theater</span>
   </a>
-  <!-- 新增掛斷按鈕 點擊返回index3 -->
-  <button class="lang-toggle ripple-container" onclick="location.href='index3.html'">
+  <!-- 新增掛斷按鈕 點擊返回3 --
+  <button class="lang-toggle ripple-container" onclick="location.href='index.html'">
     <span data-en="Hang Up" data-zh="掛斷電話" data-chs="挂断电话">Hang Up</span>
   </button>
   <button
